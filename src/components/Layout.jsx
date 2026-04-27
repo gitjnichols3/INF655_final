@@ -5,7 +5,7 @@ function Layout() {
   return (
     <>
       <Navbar />
-      <main>
+      <main className="app-container">
         <Outlet />
       </main>
     </>

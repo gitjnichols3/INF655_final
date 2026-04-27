@@ -17,13 +17,22 @@ function App() {
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
         <Route
-              path="dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
+          path="dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="album/:id"
+          element={
+            <ProtectedRoute>
+              <AlbumDetails />
+            </ProtectedRoute>
+          }
+        />
         <Route path="album/:id" element={<AlbumDetails />} />
         <Route path="*" element={<NotFound />} />
       </Route>

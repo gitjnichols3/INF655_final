@@ -5,7 +5,7 @@ function Navbar() {
   const { user, logout } = useAuth();
 
   return (
-    <nav>
+    <nav className="navbar">
       <Link to="/">Home</Link>{" | "}
 
       {user ? (

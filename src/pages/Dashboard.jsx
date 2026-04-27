@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../firebase/firebase";
+import { Link } from "react-router-dom";
 
 import {
   collection,
@@ -89,7 +90,7 @@ function handleEdit(album) {
     <section>
       <h1>Dashboard</h1>
 
-     <form onSubmit={handleSubmit}>
+     <form className="album-form" onSubmit={handleSubmit}>
         <h2>{editingId ? "Edit Album" : "Create Album"}</h2>
 
         <div>
@@ -138,11 +139,12 @@ function handleEdit(album) {
       {albums.length === 0 ? (
         <p>No albums yet.</p>
       ) : (
-        <div>
+        <div className="album-grid">
           {albums.map((album) => (
-            <article key={album.id}>
+            <article key={album.id} className="album-card">
               <h3>{album.title}</h3>
               <p>{album.description}</p>
+              <Link to={`/album/${album.id}`}>View Album</Link>
 
               <button onClick={() => handleDelete(album.id)}>
                 Delete
