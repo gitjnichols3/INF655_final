@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { db } from "../firebase/firebase";
+import { db, storage } from "../firebase/firebase";
 import { Link } from "react-router-dom";
 
 import {
@@ -15,6 +15,8 @@ import {
   updateDoc
 } from "firebase/firestore";
 
+import { ref, deleteObject } from "firebase/storage";
+
 function Dashboard() {
   const { user } = useAuth();
 
@@ -22,6 +24,17 @@ function Dashboard() {
   const [description, setDescription] = useState("");
   const [albums, setAlbums] = useState([]);
   const [editingId, setEditingId] = useState(null);
+
+async function handleToggleShare(album) {
+  const slug = album.shareSlug || crypto.randomUUID();
+
+  await updateDoc(doc(db, "albums", album.id), {
+    isShared: !album.isShared,
+    shareSlug: slug
+  });
+
+  loadAlbums();
+}
 
   async function loadAlbums() {
     const q = query(
@@ -39,46 +52,85 @@ function Dashboard() {
     setAlbums(albumData);
   }
 
-async function handleSubmit(e) {
-  e.preventDefault();
+  async function handleSubmit(e) {
+    e.preventDefault();
 
-  if (editingId) {
-    await updateDoc(doc(db, "albums", editingId), {
-      title,
-      description
-    });
+    if (editingId) {
+      await updateDoc(doc(db, "albums", editingId), {
+        title,
+        description
+      });
 
-    setEditingId(null);
-  } else {
-    await addDoc(collection(db, "albums"), {
-      title,
-      description,
-      userId: user.uid,
-      createdAt: serverTimestamp()
-    });
+      setEditingId(null);
+    } else {
+await addDoc(collection(db, "albums"), {
+  title,
+  description,
+  userId: user.uid,
+  isShared: false,
+  shareSlug: crypto.randomUUID(),
+  createdAt: serverTimestamp()
+});
+    }
+
+    setTitle("");
+    setDescription("");
+    loadAlbums();
   }
-
-  setTitle("");
-  setDescription("");
-  loadAlbums();
-}
 
   async function handleDelete(id) {
-  const confirmDelete = confirm("Are you sure you want to delete this album?");
+    const confirmDelete = confirm(
+      "Are you sure you want to delete this album and all of its photos?"
+    );
 
-  if (!confirmDelete) {
-    return;
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      const photosQuery = query(
+        collection(db, "photos"),
+        where("albumId", "==", id)
+      );
+
+      const photosSnapshot = await getDocs(photosQuery);
+
+      const deletePhotoPromises = photosSnapshot.docs.map(async (photoDoc) => {
+        const photo = photoDoc.data();
+
+        await Promise.all([
+          photo.originalPath
+            ? deleteObject(ref(storage, photo.originalPath)).catch(() => {})
+            : Promise.resolve(),
+
+          photo.thumbnailPath
+            ? deleteObject(ref(storage, photo.thumbnailPath)).catch(() => {})
+            : Promise.resolve(),
+
+          photo.mediumPath
+            ? deleteObject(ref(storage, photo.mediumPath)).catch(() => {})
+            : Promise.resolve()
+        ]);
+
+        await deleteDoc(doc(db, "photos", photoDoc.id));
+      });
+
+      await Promise.all(deletePhotoPromises);
+
+      await deleteDoc(doc(db, "albums", id));
+
+      loadAlbums();
+    } catch (err) {
+      console.error(err);
+      alert("Album delete failed");
+    }
   }
 
-  await deleteDoc(doc(db, "albums", id));
-  loadAlbums();
-}
-
-function handleEdit(album) {
-  setEditingId(album.id);
-  setTitle(album.title);
-  setDescription(album.description);
-}
+  function handleEdit(album) {
+    setEditingId(album.id);
+    setTitle(album.title);
+    setDescription(album.description);
+  }
 
   useEffect(() => {
     if (user) {
@@ -90,7 +142,7 @@ function handleEdit(album) {
     <section>
       <h1>Dashboard</h1>
 
-     <form className="album-form" onSubmit={handleSubmit}>
+      <form className="album-form" onSubmit={handleSubmit}>
         <h2>{editingId ? "Edit Album" : "Create Album"}</h2>
 
         <div>
@@ -142,16 +194,51 @@ function handleEdit(album) {
         <div className="album-grid">
           {albums.map((album) => (
             <article key={album.id} className="album-card">
-              <h3>{album.title}</h3>
+              <h3>
+                {album.title} {album.isShared && <span>🔗</span>}
+              </h3>
               <p>{album.description}</p>
+
               <Link to={`/album/${album.id}`}>View Album</Link>
 
               <button onClick={() => handleDelete(album.id)}>
                 Delete
               </button>
+
               <button onClick={() => handleEdit(album)}>
                 Edit
               </button>
+
+              <button onClick={() => handleToggleShare(album)}>
+  {album.isShared ? "Disable Sharing" : "Enable Sharing"}
+</button>
+
+{album.isShared && (
+  <div>
+    <p>
+      Share URL:{" "}
+      <a
+        href={`${window.location.origin}/share/${album.shareSlug}`}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {window.location.origin}/share/{album.shareSlug}
+      </a>
+    </p>
+
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(
+          `${window.location.origin}/share/${album.shareSlug}`
+        );
+      }}
+    >
+      Copy Link
+    </button>
+  </div>
+)}
+
+
             </article>
           ))}
         </div>

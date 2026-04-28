@@ -8,10 +8,12 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import AlbumDetails from "./pages/AlbumDetails";
 import NotFound from "./pages/NotFound";
+import SharedAlbum from "./pages/SharedAlbum";
 
 function App() {
   return (
     <Routes>
+      <Route path="/share/:slug" element={<SharedAlbum />} />
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="login" element={<Login />} />
