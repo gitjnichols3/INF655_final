@@ -6,39 +6,58 @@ function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   async function handleSubmit(e) {
     e.preventDefault();
+    setError("");
+
+    if (!name || !email || !password) {
+      return setError("Please fill in all fields");
+    }
 
     try {
-      await register(email, password);
+      await register(email, password, name);
       navigate("/dashboard");
     } catch (err) {
       console.error(err);
-      alert("Registration failed");
+      setError("Registration failed. Try again.");
     }
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h1>Register</h1>
+    <div className="auth-page">
+      <form onSubmit={handleSubmit} className="auth-card">
+        <h1>Create Account</h1>
 
-      <input
-        type="email"
-        placeholder="Email"
-        onChange={(e) => setEmail(e.target.value)}
-      />
+        {error && <p className="form-error">{error}</p>}
 
-      <input
-        type="password"
-        placeholder="Password"
-        onChange={(e) => setPassword(e.target.value)}
-      />
+        <input
+          type="text"
+          placeholder="Name"
+          onChange={(e) => setName(e.target.value)}
+        />
 
-      <button type="submit">Create Account</button>
-    </form>
+        <input
+          type="email"
+          placeholder="Email"
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        <button type="submit" className="primary-button">
+          Create Account
+        </button>
+      </form>
+    </div>
   );
 }
 

@@ -5,22 +5,32 @@ function Navbar() {
   const { user, logout } = useAuth();
 
   return (
-    <nav className="navbar">
-      <Link to="/">Home</Link>{" | "}
+    <header className="site-header">
+      <nav className="navbar">
+        <Link to="/" className="navbar-logo">
+          Share the Moment
+        </Link>
 
-      {user ? (
-        <>
-          <Link to="/dashboard">Dashboard</Link>{" | "}
-          <span>{user.email}</span>{" "}
-          <button onClick={logout}>Logout</button>
-        </>
-      ) : (
-        <>
-          <Link to="/login">Login</Link>{" | "}
-          <Link to="/register">Register</Link>
-        </>
-      )}
-    </nav>
+        <div className="navbar-links">
+          <Link to="/">Home</Link>
+
+          {user ? (
+            <>
+              <Link to="/dashboard">Dashboard</Link>
+              <span className="navbar-user">{user.displayName || user.email}</span>
+              <button type="button" onClick={logout} className="nav-button">
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login">Login</Link>
+              <Link to="/register">Register</Link>
+            </>
+          )}
+        </div>
+      </nav>
+    </header>
   );
 }
 
