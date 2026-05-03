@@ -8,7 +8,8 @@ function Navbar() {
     <header className="site-header">
       <nav className="navbar">
         <Link to="/" className="navbar-logo">
-          Share the Moment
+          <img src="/images/logo-mark.png" alt="Share the Moment logo" />
+          <span>Share the Moment</span>
         </Link>
 
         <div className="navbar-links">
@@ -17,7 +18,11 @@ function Navbar() {
           {user ? (
             <>
               <Link to="/dashboard">Dashboard</Link>
-              <span className="navbar-user">{user.displayName || user.email}</span>
+              <span className="navbar-user">
+                Hi, {user?.displayName
+                  ? user.displayName.split(" ")[0]
+                  : user?.email}
+              </span>
               <button type="button" onClick={logout} className="nav-button">
                 Logout
               </button>

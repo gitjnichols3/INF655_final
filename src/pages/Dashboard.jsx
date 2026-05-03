@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { db, storage } from "../firebase/firebase";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import {
   collection,
@@ -19,6 +19,7 @@ import { ref, deleteObject } from "firebase/storage";
 
 function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -75,17 +76,34 @@ async function handleToggleShare(album) {
         ? new Date(Math.min(...photoDates.map((date) => date.getTime())))
         : null;
 
-    return {
-      ...album,
-      photoCount: albumPhotos.length,
-      albumDate: earliestDate
-    };
+const coverPhoto = albumPhotos[0];
+
+return {
+  ...album,
+  photoCount: albumPhotos.length,
+  albumDate: earliestDate,
+  coverImage:
+    coverPhoto?.thumbnailUrl ||
+    coverPhoto?.mediumUrl ||
+    coverPhoto?.originalUrl ||
+    null
+};
   });
 
-  albumsWithPhotoData.sort((a, b) => {
-    if (!a.albumDate && !b.albumDate) return 0;
-    if (!a.albumDate) return 1;
-    if (!b.albumDate) return -1;
+albumsWithPhotoData.sort((a, b) => {
+    // New albums with no photos/date stay at the top
+    if (!a.albumDate && !b.albumDate) {
+      const aCreated = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+      const bCreated = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+
+      return bCreated - aCreated;
+    }
+
+    // Albums without photos come before albums with photos
+    if (!a.albumDate) return -1;
+    if (!b.albumDate) return 1;
+
+    // Once albums have photos, sort by album/photo date as before
     return b.albumDate - a.albumDate;
   });
 
@@ -187,74 +205,100 @@ await addDoc(collection(db, "albums"), {
 
  return (
   <section className="dashboard-page">
-    <h1>Dashboard</h1>
+    <h1 className="dashboard-heading">
+      {user?.displayName
+        ? `${user.displayName.split(" ")[0]}'s Dashboard`
+        : "Your Dashboard"}
+    </h1>
 
     <div className="dashboard-layout">
       
       {/* LEFT: Albums */}
       <div className="dashboard-main">
-        <h2>Your Albums</h2>
+      <h2 className="dashboard-section-title">Your Albums</h2>
 
         {albums.length === 0 ? (
             <div className="empty-state">
-              <p>No albums yet.</p>
+              <p className="empty-state">
+                {user?.displayName
+                  ? `${user.displayName.split(" ")[0]}, you don't have any albums yet`
+                  : "You don't have any albums yet"}
+              </p>
               <p>Create your first album to get started.</p>
             </div>
         ) : (
           <div className="album-grid">
             {albums.map((album) => (
-              <article key={album.id} className="album-card">
-                <h3>
-                  {album.title} {album.isShared && <span>🔗</span>}
-                </h3>
-
-                <p>{album.description}</p>
-
-                <div className="album-meta">
-                  <span>
-                    📸 {album.photoCount} {album.photoCount === 1 ? "photo" : "photos"}
-                  </span>
-
-                  
-
-                  {album.albumDate && (
-                    <span>📅 {formatDate(album.albumDate)}</span>
-                  )}
-                </div>
-
-                <Link to={`/album/${album.id}`}>
-                  View Album
-                </Link>
-
-                <div className="album-actions">
-                  <button onClick={() => handleEdit(album)}>Edit</button>
-                  <button onClick={() => handleDelete(album.id)}>Delete</button>
-                  <button onClick={() => handleToggleShare(album)}>
-                    {album.isShared ? "Disable Sharing" : "Enable Sharing"}
-                  </button>
-                </div>
-
-                {album.isShared && (
-                  <div className="share-box">
-                    <a
-                      href={`${window.location.origin}/share/${album.shareSlug}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      View Shared Album
-                    </a>
-
-                    <button
-                      onClick={() =>
-                        navigator.clipboard.writeText(
-                          `${window.location.origin}/share/${album.shareSlug}`
-                        )
-                      }
-                    >
-                      Copy Link
-                    </button>
+              <article
+                key={album.id}
+                className="album-card"
+                onClick={() => navigate(`/album/${album.id}`)}
+              >
+                <div className="album-card-layout">
+                  <div className="album-card-cover">
+                    {album.coverImage ? (
+                      <img src={album.coverImage} alt={`${album.title} cover`} />
+                    ) : (
+                      <div className="album-card-placeholder">No photos</div>
+                    )}
                   </div>
-                )}
+
+                  <div className="album-card-content">
+                    <h3 className="album-title">
+                      {album.title} {album.isShared && <span>🔗</span>}
+                    </h3>
+
+                    <p className="album-description">{album.description}</p>
+
+                    <div className="album-meta">
+                      <span>
+                        📸 {album.photoCount} {album.photoCount === 1 ? "photo" : "photos"}
+                      </span>
+
+                      {album.albumDate && <span>📅 {formatDate(album.albumDate)}</span>}
+                    </div>
+
+                    <div
+                      className="album-actions"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button onClick={() => handleEdit(album)}>Edit</button>
+                      <button onClick={() => handleDelete(album.id)}>Delete</button>
+                      <button onClick={() => handleToggleShare(album)}>
+                        {album.isShared ? "Disable Sharing" : "Enable Sharing"}
+                      </button>
+                    </div>
+
+                    {album.isShared && (
+                      <div
+                        className="share-box"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <a
+                          href={`${window.location.origin}/share/${album.shareSlug}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="album-link"
+                        >
+                          View Shared Album
+                        </a>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(
+                              `${window.location.origin}/share/${album.shareSlug}`
+                            );
+                          }}
+                        >
+                          Copy Link
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="album-card-view">View Album →</div>
+                </div>
               </article>
             ))}
           </div>
