@@ -177,6 +177,10 @@ p {
 .navbar-user {
   color: #6b5a49;
   font-size: 0.9rem;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* =========================
@@ -350,6 +354,13 @@ p {
   font-size: 1rem;
   border: 1px solid var(--border);
   border-radius: 6px;
+}
+
+.auth-heading {
+  font-size: 1.8rem;
+  line-height: 1.3;
+  text-align: center;
+  margin-bottom: 1rem;
 }
 
 .form-error {
@@ -1209,6 +1220,29 @@ p {
 }
 
 @media (max-width: 650px) {
+
+  .auth-page h1,
+  .auth-page h2,
+  .auth-card h1,
+  .auth-card h2,
+  .auth-heading {
+    font-size: 1.6rem !important;
+    line-height: 1.35 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 0 1.25rem 0 !important;
+    padding: 0 !important;
+    white-space: normal !important;
+    text-align: center;
+  }
+
+
+    .auth-heading {
+    font-size: 1.4rem;
+    line-height: 1.3;
+    padding: 0 0.5rem;
+  }
+
   .app-container {
     padding: 0 1rem;
   }
@@ -1220,6 +1254,12 @@ p {
   .navbar {
     flex-direction: column;
     align-items: flex-start;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  .navbar-user {
+    max-width: 110px;
   }
 
   .hero-actions,
@@ -1252,5 +1292,211 @@ p {
 
   .modal-next {
     right: 0.75rem;
+  }
+
+  .dashboard-page {
+    width: 100%;
+  }
+
+  .dashboard-heading {
+    width: 100%;
+    font-size: 1.8rem;
+    line-height: 1.25;
+    text-align: center;
+    margin: 1.5rem 0 1rem;
+    word-break: break-word;
+  }
+
+  .dashboard-layout {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  .dashboard-main,
+  .dashboard-aside {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .dashboard-aside {
+    position: static;
+  }
+
+  .album-grid {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .album-card {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .album-card-layout {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .album-card-cover {
+    width: 100%;
+    height: 180px;
+  }
+
+  .album-card-content {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .album-title {
+    font-size: 1.35rem;
+    line-height: 1.25;
+    word-break: break-word;
+  }
+
+  .album-card-view {
+    margin-left: 0;
+    align-self: flex-start;
+  }
+
+  .album-form {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 1rem;
+  }
+
+  .album-form input,
+  .album-form button {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+   .album-page {
+    width: 100%;
+    padding-top: 0.5rem;
+  }
+
+  .back-link {
+    align-self: flex-start;
+    margin-bottom: 1rem;
+  }
+
+  .album-header {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    padding: 0 0.25rem;
+    box-sizing: border-box;
+  }
+
+  .album-header h1 {
+    font-size: 2rem;
+    line-height: 1.2;
+    margin-bottom: 0.75rem;
+    word-break: break-word;
+  }
+
+  .album-header p {
+    font-size: 0.95rem;
+    line-height: 1.45;
+  }
+
+  .album-content-layout {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .album-main-area,
+  .gallery-column,
+  .timeline-column {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .album-controls {
+    position: static;
+    width: 100%;
+    order: -1;
+  }
+
+  .share-box,
+  .upload-section,
+  .event-section {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 1rem;
+  }
+
+  .album-content-with-timeline {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .timeline-column {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .timeline-list {
+    padding-left: 1.25rem;
+    gap: 1.25rem;
+  }
+
+  .timeline-events,
+  .timeline-extra-links {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .timeline-event-row {
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .timeline-item {
+    flex: 1;
+    white-space: normal;
+    text-align: left;
+  }
+
+  .photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .photo-delete-link,
+  .photo-event-select {
+    opacity: 1;
+  }
+
+  .modal-overlay {
+    padding: 1rem;
+  }
+
+  .modal-content {
+    max-width: 100%;
+    max-height: 85vh;
+  }
+
+  .modal-image {
+    max-height: 75vh;
+  }
+
+  .modal-meta {
+    font-size: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .modal-close {
+    top: 0.75rem;
+    right: 1rem;
   }
 }
