@@ -13,26 +13,27 @@ const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-async function register(email, password, name) {
-  const userCredential = await createUserWithEmailAndPassword(
-    auth,
-    email,
-    password
-  );
+  async function register(email, password, name) {
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
 
-  const user = userCredential.user;
+    const user = userCredential.user;
 
-  if (name) {
-    await updateProfile(user, {
-      displayName: name,
-    });
+    if (name) {
+      await updateProfile(user, {
+        displayName: name,
+      });
 
-    await user.reload(); // helps ensure it's available immediately
+      await user.reload();
+    }
+
+    return user;
   }
-
-  return user;
-}
 
   function login(email, password) {
     return signInWithEmailAndPassword(auth, email, password);
@@ -45,13 +46,14 @@ async function register(email, password, name) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, register, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, register, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

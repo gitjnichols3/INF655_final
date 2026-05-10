@@ -13,11 +13,15 @@ import SharedAlbum from "./pages/SharedAlbum";
 function App() {
   return (
     <Routes>
-      <Route path="/share/:slug" element={<SharedAlbum />} />
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
+
         <Route path="login" element={<Login />} />
+
         <Route path="register" element={<Register />} />
+
+        <Route path="share/:slug" element={<SharedAlbum />} />
+
         <Route
           path="dashboard"
           element={
@@ -35,7 +39,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="album/:id" element={<AlbumDetails />} />
+
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

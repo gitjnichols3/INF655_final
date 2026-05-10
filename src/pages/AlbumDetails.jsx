@@ -38,6 +38,8 @@ function AlbumDetails() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState("");
+  const [uploadBatchInfo, setUploadBatchInfo] = useState(null);
+  const [uploadCompleteMessage, setUploadCompleteMessage] = useState("");
   const [photos, setPhotos] = useState([]);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
 
@@ -48,6 +50,81 @@ function AlbumDetails() {
   const [selectedEventId, setSelectedEventId] = useState("");
   const [activeEventId, setActiveEventId] = useState(null);
   const [editingEventId, setEditingEventId] = useState(null);
+  const [photosLoading, setPhotosLoading] = useState(true);
+  const [isPhonePortrait, setIsPhonePortrait] = useState(() => {
+  return window.innerWidth <= 650 && window.innerHeight > window.innerWidth;
+});
+
+  const [albumView, setAlbumView] = useState(() => {
+    if (window.innerWidth <= 650 || window.innerHeight <= 500) {
+      return "mobile";
+    }
+
+    if (window.innerWidth <= 900 || window.innerHeight <= 600) {
+      return "tablet";
+    }
+
+    return "desktop";
+  });
+
+  const isMobile =
+  window.innerWidth <= 650 || window.innerHeight <= 500;
+
+  
+
+
+const [showManageImages, setShowManageImages] = useState(() => {
+  const isMobile =
+    window.innerWidth <= 650 || window.innerHeight <= 500;
+
+  const isLandscape =
+    window.innerWidth > window.innerHeight;
+
+  return isMobile ? isLandscape : true;
+});
+
+  const [showTimeline, setShowTimeline] = useState(true);
+
+  useEffect(() => {
+    function handleResize() {
+
+      const phonePortrait =
+      window.innerWidth <= 650 && window.innerHeight > window.innerWidth;
+
+      setIsPhonePortrait(phonePortrait);
+
+
+      if (window.innerWidth <= 650 || window.innerHeight <= 500) {
+        setAlbumView("mobile");
+
+        const isLandscape =
+          window.innerWidth > window.innerHeight;
+
+          if (isLandscape) {
+              setShowManageImages(true);
+              setShowTimeline(true);
+            }
+      } else if (window.innerWidth <= 900 || window.innerHeight <= 600) {
+        setAlbumView("tablet");
+        setShowManageImages(true);
+        setShowTimeline(true);
+      } else {
+        setAlbumView("desktop");
+        setShowManageImages(true);
+        setShowTimeline(true);
+      }
+    }
+
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("orientationchange", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     async function loadAlbum() {
@@ -68,8 +145,10 @@ function AlbumDetails() {
   }, [id]);
 
   useEffect(() => {
-    loadPhotos();
-  }, [id]);
+    if (user) {
+      loadPhotos();
+    }
+  }, [id, user]);
 
   useEffect(() => {
     if (user) {
@@ -77,10 +156,32 @@ function AlbumDetails() {
     }
   }, [id, user]);
 
+  useEffect(() => {
+    if (!uploading) return;
+
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [uploading]);
+
   async function loadPhotos() {
+    if (!user) return;
+
+      setPhotosLoading(true);
+
+      try {
+
     const q = query(
       collection(db, "photos"),
-      where("albumId", "==", id)
+      where("albumId", "==", id),
+      where("userId", "==", user.uid)
     );
 
     const querySnapshot = await getDocs(q);
@@ -104,8 +205,12 @@ function AlbumDetails() {
       return aDate - bDate;
     });
 
-    setPhotos(photoData);
+        setPhotos(photoData);
+  } finally {
+    setPhotosLoading(false);
   }
+}
+  
 
   async function loadEvents() {
     if (!user) return;
@@ -133,22 +238,22 @@ function AlbumDetails() {
   }
 
   function uploadFileWithProgress(storageRef, file, progressCallback) {
-  return new Promise((resolve, reject) => {
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    return new Promise((resolve, reject) => {
+      const uploadTask = uploadBytesResumable(storageRef, file);
 
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        const progress =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
 
-        progressCallback(progress);
-      },
-      reject,
-      () => resolve(uploadTask.snapshot)
-    );
-  });
-}
+          progressCallback(progress);
+        },
+        reject,
+        () => resolve(uploadTask.snapshot)
+      );
+    });
+  }
 
   async function handlePhotoUpload(e) {
     const files = Array.from(e.target.files);
@@ -160,13 +265,23 @@ function AlbumDetails() {
     setUploadStatus("Preparing photos...");
 
     try {
-      for (const file of files) {
+      let uploadedCount = 0;
+      let skippedCount = 0;
 
-          if (!file.type.startsWith("image/")) {
-            alert(`${file.name} is not an image file and was skipped.`);
-            continue;
-          }
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
 
+        setUploadBatchInfo({
+          current: i + 1,
+          total: files.length,
+          fileName: file.name
+        });
+
+        if (!file.type.startsWith("image/")) {
+          skippedCount++;
+          setUploadStatus(`Skipped ${file.name}`);
+          continue;
+        }
 
         const isDuplicate = photos.some(
           (photo) =>
@@ -175,7 +290,8 @@ function AlbumDetails() {
         );
 
         if (isDuplicate) {
-          alert("Duplicate skipped:", file.name);
+          skippedCount++;
+          setUploadStatus(`Skipped ${file.name}`);
           continue;
         }
 
@@ -213,24 +329,16 @@ function AlbumDetails() {
         let takenAtValue;
 
         try {
-          const exifData = await exifr.parse(file, [
-            "DateTimeOriginal"
-          ]);
+          const exifData = await exifr.parse(file, ["DateTimeOriginal"]);
 
           if (exifData?.DateTimeOriginal) {
-            takenAtValue = Timestamp.fromDate(
-              exifData.DateTimeOriginal
-            );
+            takenAtValue = Timestamp.fromDate(exifData.DateTimeOriginal);
           } else {
-            takenAtValue = Timestamp.fromDate(
-              new Date(file.lastModified)
-            );
+            takenAtValue = Timestamp.fromDate(new Date(file.lastModified));
           }
         } catch (err) {
           console.log("EXIF read failed:", file.name);
-          takenAtValue = Timestamp.fromDate(
-            new Date(file.lastModified)
-          );
+          takenAtValue = Timestamp.fromDate(new Date(file.lastModified));
         }
 
         await addDoc(collection(db, "photos"), {
@@ -248,19 +356,39 @@ function AlbumDetails() {
           takenAt: takenAtValue,
           createdAt: serverTimestamp()
         });
+
+        uploadedCount++;
       }
 
-      setUploadStatus("Upload complete");
-      setTimeout(() => setUploading(false), 800);
+      const completeMessage =
+        skippedCount > 0
+          ? `Upload complete: ${uploadedCount} added, ${skippedCount} skipped`
+          : `Upload complete: ${uploadedCount} photos added`;
+
+      setUploadCompleteMessage(completeMessage);
+      setUploadStatus(completeMessage);
+
       e.target.value = "";
       loadPhotos();
+
+      setTimeout(() => {
+        setUploadCompleteMessage("");
+      }, 5000);
+
+      if (selectedEventId) {
+        setActiveEventId(selectedEventId);
+
+        if (window.innerWidth <= 650) {
+          setShowTimeline(false);
+        }
+      }
     } catch (err) {
       console.error(err);
       alert("Photo upload failed");
     } finally {
       setUploading(false);
       setUploadProgress(0);
-      setUploadStatus("");
+      setUploadBatchInfo(null);
     }
   }
 
@@ -302,43 +430,46 @@ function AlbumDetails() {
     setEventName(event.name || "");
     setEventLocation(event.location || "");
     setEventDescription(event.description || "");
+    setShowManageImages(true);
   }
 
   async function handleCreateEvent(e) {
-      e.preventDefault();
+    e.preventDefault();
 
-      if (!eventName || !user) return;
+    if (!eventName || !user) return;
 
-      try {
-        if (editingEventId) {
-          await updateDoc(doc(db, "events", editingEventId), {
-            name: eventName,
-            location: eventLocation,
-            description: eventDescription
-          });
-        } else {
-          await addDoc(collection(db, "events"), {
-            albumId: id,
-            userId: user.uid,
-            name: eventName,
-            location: eventLocation,
-            description: eventDescription,
-            eventDate: null,
-            createdAt: serverTimestamp()
-          });
-        }
+    try {
+      if (editingEventId) {
+        await updateDoc(doc(db, "events", editingEventId), {
+          name: eventName,
+          location: eventLocation,
+          description: eventDescription
+        });
+      } else {
+        const newEventRef = await addDoc(collection(db, "events"), {
+          albumId: id,
+          userId: user.uid,
+          name: eventName,
+          location: eventLocation,
+          description: eventDescription,
+          eventDate: null,
+          createdAt: serverTimestamp()
+        });
 
-        setEditingEventId(null);
-        setEventName("");
-        setEventLocation("");
-        setEventDescription("");
-
-        loadEvents();
-      } catch (err) {
-        console.error(err);
-        alert("Failed to save event");
+        setSelectedEventId(newEventRef.id);
       }
+
+      setEditingEventId(null);
+      setEventName("");
+      setEventLocation("");
+      setEventDescription("");
+
+      loadEvents();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save event");
     }
+  }
 
   async function handleDeleteEvent(event) {
     const confirmDelete = confirm(
@@ -350,13 +481,13 @@ function AlbumDetails() {
     try {
       const batch = writeBatch(db);
 
-      const eventRef = doc(db, "events", event.id);
-      batch.delete(eventRef);
+      batch.delete(doc(db, "events", event.id));
 
       const photosQuery = query(
         collection(db, "photos"),
         where("albumId", "==", id),
-        where("eventId", "==", event.id)
+        where("eventId", "==", event.id),
+        where("userId", "==", user.uid)
       );
 
       const photosSnapshot = await getDocs(photosQuery);
@@ -371,6 +502,7 @@ function AlbumDetails() {
 
       if (activeEventId === event.id) {
         setActiveEventId(null);
+        setShowTimeline(true);
       }
 
       loadEvents();
@@ -380,6 +512,37 @@ function AlbumDetails() {
       alert("Failed to delete event");
     }
   }
+
+  async function handleToggleShare() {
+    const slug = album.shareSlug || crypto.randomUUID();
+
+    await updateDoc(doc(db, "albums", album.id), {
+      isShared: !album.isShared,
+      shareSlug: slug
+    });
+
+    setAlbum({
+      ...album,
+      isShared: !album.isShared,
+      shareSlug: slug
+    });
+  }
+
+function handleTimelineSelection(value) {
+  setActiveEventId(value);
+
+  const isMobile =
+    window.innerWidth <= 650 || window.innerHeight <= 500;
+
+  const isLandscape =
+    window.innerWidth > window.innerHeight;
+
+  if (isMobile && !isLandscape) {
+    setShowTimeline(false);
+  } else {
+    setShowTimeline(true);
+  }
+}
 
   if (loading) {
     return <p>Loading album...</p>;
@@ -395,9 +558,7 @@ function AlbumDetails() {
   }
 
   const hasTimeline = events.length > 0;
-
   const uncategorizedPhotos = photos.filter((photo) => !photo.eventId);
-
   const activeEvent = events.find((event) => event.id === activeEventId);
 
   const activeEventPhotos =
@@ -428,7 +589,8 @@ function AlbumDetails() {
     );
 
     const previousIndex =
-      (currentIndex - 1 + activeEventPhotos.length) % activeEventPhotos.length;
+      (currentIndex - 1 + activeEventPhotos.length) %
+      activeEventPhotos.length;
 
     setSelectedPhoto(activeEventPhotos[previousIndex]);
   }
@@ -487,136 +649,226 @@ function AlbumDetails() {
   });
 
   return (
-  <section className="album-page">
-    <Link to="/dashboard" className="back-link">
-      ← Back to Dashboard
-    </Link>
+    <section className="album-page">
+      <Link
+        to="/dashboard"
+        className="back-link"
+        onClick={(e) => {
+          if (uploading) {
+            e.preventDefault();
+            alert("Photos are still uploading. Please wait until the upload is complete before leaving this page.");
+          }
+        }}
+      >
+        ← Back to Dashboard
+      </Link>
 
-    <div className="album-header">
-      <h1>{album.title}</h1>
-      <p>{album.description}</p>
-    </div>
+      <div className="album-header">
+        <h1>{album.title}</h1>
+        <p>{album.description}</p>
+      </div>
 
-    <div className="album-content-layout">
-      <main className="album-main-area">
-        {hasTimeline ? (
-          <div className="album-content-with-timeline">
-            <div className="timeline-column">
-              <h2>Timeline</h2>
+      <div className="album-content-layout">
+        <main className="album-main-area">
+          {hasTimeline ? (
+            <div className="album-content-with-timeline">
+              {showTimeline && (
+                <div className="timeline-column">
+                  <div className="timeline-intro">
+                    <h2>Select an Event</h2>
+                    <p>Select an event from the timeline to view photos.</p>
+                  </div>
 
-              <div className="timeline-list">
-                {groupedEventList.map((group) => (
-                  <div
-                    key={group.date ? group.date.toISOString() : "no-date"}
-                    className="timeline-date-group"
-                  >
-                    <h3 className="timeline-date">{formatDate(group.date)}</h3>
+                  <div className="timeline-list">
+                    {groupedEventList.map((group) => (
+                      <div
+                        key={group.date ? group.date.toISOString() : "no-date"}
+                        className="timeline-date-group"
+                      >
+                        <h3 className="timeline-date">
+                          {formatDate(group.date)}
+                        </h3>
 
-                    <div className="timeline-events">
-                      {group.events.map((event) => (
-                        <div className="timeline-event-row" key={event.id}>
-                          <button
-                            type="button"
-                            className={`timeline-item ${
-                              activeEventId === event.id ? "active" : ""
-                            }`}
-                            onClick={() => setActiveEventId(event.id)}
-                          >
-                            <span className="timeline-title">{event.name}</span>
-                          </button>
-
-                          <div className="timeline-actions">
-                            <button
-                              type="button"
-                              className="timeline-edit"
-                              onClick={() => handleStartEditEvent(event)}
+                        <div className="timeline-events">
+                          {group.events.map((event) => (
+                            <div
+                              className="timeline-event-row"
+                              key={event.id}
                             >
-                              edit
-                            </button>
+                              <button
+                                type="button"
+                                className={`timeline-item ${
+                                  activeEventId === event.id ? "active" : ""
+                                }`}
+                                onClick={() =>
+                                  handleTimelineSelection(event.id)
+                                }
+                              >
+                                <span className="timeline-title">
+                                  {event.name}
+                                </span>
+                              </button>
 
-                            <button
-                              type="button"
-                              className="timeline-delete"
-                              onClick={() => handleDeleteEvent(event)}
-                            >
-                              delete
-                            </button>
-                          </div>
+                              <div className="timeline-actions">
+                                <button
+                                  type="button"
+                                  className="timeline-edit"
+                                  onClick={() => handleStartEditEvent(event)}
+                                >
+                                  edit
+                                </button>
+
+                                <button
+                                  type="button"
+                                  className="timeline-delete"
+                                  onClick={() => handleDeleteEvent(event)}
+                                >
+                                  delete
+                                </button>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      </div>
+                    ))}
+
+                    <div className="timeline-extra-links">
+                      <button
+                        type="button"
+                        className={`timeline-item ${
+                          activeEventId === "all" ? "active" : ""
+                        }`}
+                        onClick={() => handleTimelineSelection("all")}
+                      >
+                        <span className="timeline-title">All Photos</span>
+                      </button>
+
+                      {uncategorizedPhotos.length > 0 && (
+                        <button
+                          type="button"
+                          className={`timeline-item ${
+                            activeEventId === "uncategorized" ? "active" : ""
+                          }`}
+                          onClick={() =>
+                            handleTimelineSelection("uncategorized")
+                          }
+                        >
+                          <span className="timeline-title">
+                            Uncategorized
+                          </span>
+                        </button>
+                      )}
                     </div>
                   </div>
-                ))}
-
-                <div className="timeline-extra-links">
-                  <button
-                    type="button"
-                    className={`timeline-item ${
-                      activeEventId === "all" ? "active" : ""
-                    }`}
-                    onClick={() => setActiveEventId("all")}
-                  >
-                    <span className="timeline-title">All Photos</span>
-                  </button>
-
-                  {uncategorizedPhotos.length > 0 && (
-                    <button
-                      type="button"
-                      className={`timeline-item ${
-                        activeEventId === "uncategorized" ? "active" : ""
-                      }`}
-                      onClick={() => setActiveEventId("uncategorized")}
-                    >
-                      <span className="timeline-title">Uncategorized</span>
-                    </button>
-                  )}
                 </div>
-              </div>
-            </div>
+              )}
 
-            <div className="gallery-column">
-              <div className="photo-section-header">
-                {activeEventId === null ? (
-                  <h2>Select an event</h2>
-                ) : activeEventId === "all" ? (
-                  <h2>All Photos</h2>
-                ) : activeEventId === "uncategorized" ? (
-                  <h2>Uncategorized Photos</h2>
-                ) : activeEvent ? (
-                  <>
-                    <h2 className="event-title">{activeEvent.name}</h2>
+              <div className="gallery-column">
+                <div className="photo-section-header">
+                  {activeEventId === "all" ? (
+                    <h2>All Photos</h2>
+                  ) : activeEventId === "uncategorized" ? (
+                    <h2>Uncategorized Photos</h2>
+                  ) : activeEvent ? (
+                    <>
+                      <h2 className="event-title">{activeEvent.name}</h2>
 
-                    <p className="event-meta-line">
-                      {getEventDate(activeEvent.id) &&
-                        formatDate(getEventDate(activeEvent.id))}
+                      <p className="event-meta-line">
+                        {getEventDate(activeEvent.id) &&
+                          formatDate(getEventDate(activeEvent.id))}
 
-                      {activeEvent.location && `, ${activeEvent.location}`}
+                        {activeEvent.location && `, ${activeEvent.location}`}
 
-                      {`, ${activeEventPhotoCount} ${
-                        activeEventPhotoCount === 1 ? "photo" : "photos"
-                      }`}
-                    </p>
-
-                    {activeEvent.description && (
-                      <p className="event-description">
-                        {activeEvent.description}
+                        {`, ${activeEventPhotoCount} ${
+                          activeEventPhotoCount === 1 ? "photo" : "photos"
+                        }`}
                       </p>
-                    )}
-                  </>
+
+                      {activeEvent.description && (
+                        <p className="event-description">
+                          {activeEvent.description}
+                        </p>
+                      )}
+                    </>
+                  ) : null}
+                </div>
+
+                {hasTimeline && activeEventId === null && (
+                  <div className="gallery-empty-message">
+                    <h2>No event selected</h2>
+                    <p>Click an event in the timeline to view images.</p>
+                  </div>
+                )}
+
+                {photosLoading ? (
+                  <p>Loading photos...</p>
+                ) : activeEventId !== null && activeEventPhotos.length === 0 ? (
+                  <p>No photos to show. Upload photos or create an event.</p>
                 ) : (
-                  <h2>Photos</h2>
+                  <div
+                    className="photo-grid photo-grid-fade"
+                    key={activeEventId}
+                  >
+                    {activeEventPhotos.map((photo) => (
+                      <div key={photo.id} className="photo-card">
+                        <button
+                          className="photo-thumb-button"
+                          onClick={() => setSelectedPhoto(photo)}
+                        >
+                          <img
+                            src={photo.thumbnailUrl}
+                            alt={photo.fileName}
+                            className="photo-thumb"
+                          />
+                        </button>
+
+                        <span
+                          className="photo-delete-link"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeletePhoto(photo);
+                          }}
+                        >
+                          delete
+                        </span>
+
+                        <select
+                          className="photo-event-select"
+                          value=""
+                          onChange={(e) => {
+                            handleUpdatePhotoEvent(photo.id, e.target.value);
+                          }}
+                        >
+                          <option value="" disabled>
+                            Reassign event...
+                          </option>
+
+                          <option value="">No event</option>
+
+                          {events.map((event) => (
+                            <option key={event.id} value={event.id}>
+                              {event.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
+            </div>
+          ) : (
+            <div className="album-no-timeline">
+              <h2>Photos</h2>
 
-              {activeEventPhotos.length === 0 ? (
-                activeEventId === null ? (
-                  <p>Select an event from the timeline to view photos.</p>
-                ) : (
-                  <p>No photos to show. Upload photos or create an event.</p>
-                )
+              {photosLoading ? (
+                 <p>Loading photos...</p>
+                ) : 
+                photos.length === 0 ? (
+                <p>No photos to show. Upload photos or create an event.</p>
               ) : (
-                <div className="photo-grid photo-grid-fade" key={activeEventId}>
-                  {activeEventPhotos.map((photo) => (
+                <div className="photo-grid">
+                  {photos.map((photo) => (
                     <div key={photo.id} className="photo-card">
                       <button
                         className="photo-thumb-button"
@@ -638,246 +890,304 @@ function AlbumDetails() {
                       >
                         delete
                       </span>
-
-                        <select
-                          className="photo-event-select"
-                          value=""
-                          onChange={(e) => {
-                            handleUpdatePhotoEvent(photo.id, e.target.value);
-                          }}
-                        >
-                          <option value="" disabled>
-                            Reassign event...
-                          </option>
-
-                          <span className="photo-event-label">
-                            {photo.eventId
-                              ? events.find(e => e.id === photo.eventId)?.name
-                              : "No event"}
-                          </span>
-
-                          {events.map((event) => (
-                            <option key={event.id} value={event.id}>
-                              {event.name}
-                            </option>
-                          ))}
-                        </select>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          </div>
-        ) : (
-          <div className="album-no-timeline">
-            <h2>Photos</h2>
+          )}
+        </main>
 
-            {photos.length === 0 ? (
-              <p>No photos to show. Upload photos or create an event.</p>
-            ) : (
-              <div className="photo-grid">
-                {photos.map((photo) => (
-                  <div key={photo.id} className="photo-card">
-                    <button
-                      className="photo-thumb-button"
-                      onClick={() => setSelectedPhoto(photo)}
+        <div className="album-manage-area">
+          {isMobile && (
+            <div className="mobile-album-links">
+              <button
+                type="button"
+                className="manage-albums-toggle"
+                onClick={() => setShowManageImages(!showManageImages)}
+              >
+                {showManageImages
+                  ? "Hide Image and Event Manager"
+                  : "Manage Images and Events"}
+              </button>
+
+              {!showTimeline && (
+                <>
+                  <span className="mobile-link-divider">•</span>
+
+                  <button
+                    type="button"
+                    className="manage-albums-toggle timeline-toggle"
+                    onClick={() => setShowTimeline(true)}
+                  >
+                    Timeline
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {showManageImages && (
+            <aside className="album-controls">
+              <div className="album-control-section">
+                <h2>Album Sharing</h2>
+
+                <p className="share-help-text">
+                  Enable sharing to create a read-only public link for this album.
+                </p>
+
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={handleToggleShare}
+                >
+                  {album.isShared
+                    ? "Disable Album Sharing"
+                    : "Enable Album Sharing"}
+                </button>
+
+                {album.isShared && (
+                  <div className="share-box">
+                    <a
+                      href={`${window.location.origin}/share/${album.shareSlug}`}
+                      target="_blank"
+                      rel="noreferrer"
                     >
-                      <img
-                        src={photo.thumbnailUrl}
-                        alt={photo.fileName}
-                        className="photo-thumb"
-                      />
-                    </button>
+                      View Public Link
+                    </a>
 
-                    <span
-                      className="photo-delete-link"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeletePhoto(photo);
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          `${window.location.origin}/share/${album.shareSlug}`
+                        );
                       }}
                     >
-                      delete
-                    </span>
+                      Copy Link
+                    </button>
                   </div>
-                ))}
+                )}
               </div>
-            )}
-          </div>
-        )}
-      </main>
 
-      <aside className="album-controls">
-        {album.isShared && (
-          <div className="share-box">
-            <p>Shared Album</p>
-            <a
-              href={`${window.location.origin}/share/${album.shareSlug}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              View Public Link
-            </a>
-          </div>
-        )}
+              <div className="upload-section album-control-section">
+                <h2>Upload Photos</h2>
 
-        <div className="upload-section">
-          <h2>Upload Photos</h2>
+                <p className="upload-help-text">
+                  If you plan to use timeline events, create them before
+                  uploading photos so images can be assigned automatically
+                  during upload.
+                </p>
 
-          <label htmlFor="event-select">Add photos to event</label>
+                <label htmlFor="event-select">Add photos to event</label>
 
-          <select
-            id="event-select"
-            value={selectedEventId}
-            onChange={(e) => setSelectedEventId(e.target.value)}
-          >
-            <option value="">No event</option>
+                <select
+                  id="event-select"
+                  value={selectedEventId}
+                  onChange={(e) => setSelectedEventId(e.target.value)}
+                >
+                  <option value="">No event</option>
 
-            {events.map((event) => (
-              <option key={event.id} value={event.id}>
-                {event.name}
-              </option>
-            ))}
-          </select>
+                  {events.map((event) => (
+                    <option key={event.id} value={event.id}>
+                      {event.name}
+                    </option>
+                  ))}
+                </select>
 
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handlePhotoUpload}
-            disabled={uploading}
-          />
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoUpload}
+                  disabled={uploading}
+                />
+              </div>
 
-         
-        </div>
+              <div className="event-section album-control-section">
+                <h2>
+                  {editingEventId
+                    ? "Edit Timeline Event"
+                    : "Create Timeline Event"}
+                </h2>
 
-        <div className="event-section">
-          <h2>Create Event</h2>
+                <p className="event-help-text">
+                  Events are optional. Use them when an album has several parts,
+                  such as different days, locations, or activities. Creating
+                  events lets you build a timeline for the album.
+                </p>
 
-          <form onSubmit={handleCreateEvent} className="event-form">
-            <input
-              type="text"
-              placeholder="Event name"
-              value={eventName}
-              onChange={(e) => setEventName(e.target.value)}
-              required
-            />
+                <form onSubmit={handleCreateEvent} className="event-form">
+                  <input
+                    type="text"
+                    placeholder="Event name"
+                    value={eventName}
+                    onChange={(e) => setEventName(e.target.value)}
+                    required
+                  />
 
-            <input
-              type="text"
-              placeholder="Location"
-              value={eventLocation}
-              onChange={(e) => setEventLocation(e.target.value)}
-            />
+                  <input
+                    type="text"
+                    placeholder="Location"
+                    value={eventLocation}
+                    onChange={(e) => setEventLocation(e.target.value)}
+                  />
 
-            <input
-              type="text"
-              placeholder="Description"
-              value={eventDescription}
-              onChange={(e) => setEventDescription(e.target.value)}
-            />
+                  <input
+                    type="text"
+                    placeholder="Description"
+                    value={eventDescription}
+                    onChange={(e) => setEventDescription(e.target.value)}
+                  />
 
-            <button type="submit" className="primary-button">
-              {editingEventId ? "Save Event" : "Create Event"}
-            </button>
-          </form>
-        </div>
-      </aside>
-    </div>
-
-    {uploading && (
-      <div className="upload-overlay">
-        <div className="upload-status-card">
-          <h2>Uploading Photos</h2>
-          <p>{uploadStatus}</p>
-
-          <div className="upload-progress-bar">
-            <div
-              className="upload-progress-fill"
-              style={{ width: `${uploadProgress}%` }}
-            ></div>
-          </div>
-
-          <p className="upload-progress-text">{uploadProgress}%</p>
+                  <button type="submit" className="primary-button">
+                    {editingEventId ? "Save Event" : "Create Event"}
+                  </button>
+                </form>
+              </div>
+            </aside>
+          )}
         </div>
       </div>
-    )}
 
-    {selectedPhoto && (
-      <div
-        className="modal-overlay"
-        onClick={() => setSelectedPhoto(null)}
-      >
-        <button
-          className="modal-close"
+      {(uploading || uploadCompleteMessage) && (
+        <div className="upload-floating-status">
+          <div className="upload-status-card">
+            <h2>{uploading ? "Uploading Photos" : "Upload Finished"}</h2>
+
+            {uploading && uploadBatchInfo && (
+              <p className="upload-batch-text">
+                File {uploadBatchInfo.current} of {uploadBatchInfo.total}
+              </p>
+            )}
+
+            <p>{uploadStatus}</p>
+
+            {uploading && (
+              <>
+                <div className="upload-progress-bar">
+                  <div
+                    className="upload-progress-fill"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+
+                <p className="upload-progress-text">{uploadProgress}%</p>
+              </>
+            )}
+
+            {uploading && (
+              <p className="upload-background-note">
+                You can keep working on this page while photos upload.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {selectedPhoto && (
+        <div
+          className="modal-overlay"
           onClick={() => setSelectedPhoto(null)}
         >
-          X
-        </button>
-
-        {activeEventPhotos.length > 1 && (
           <button
-            className="modal-nav modal-prev"
-            onClick={(e) => {
-              e.stopPropagation();
-              showPreviousPhoto();
-            }}
+            className="modal-close"
+            onClick={() => setSelectedPhoto(null)}
           >
-            {"<"}
+            X
           </button>
-        )}
 
-        <div
-          className="modal-content"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <img
-            src={selectedPhoto.mediumUrl}
-            alt={selectedPhoto.fileName}
-            className="modal-image"
-          />
-
-          <div className="modal-meta">
-            <span className="meta-item">{selectedPhoto.fileName}&nbsp;&bull;&nbsp;<a
-                href={selectedPhoto.originalUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="meta-item meta-link">
-                Download original
-              </a>
-            </span>
-
-            {selectedPhoto.takenAt && (
-              <span className="meta-item">
-                {selectedPhoto.takenAt.toDate
-                  ? selectedPhoto.takenAt.toDate().toLocaleDateString()
-                  : new Date(selectedPhoto.takenAt).toLocaleDateString()}
-              </span>
-            )}
-
-            <span
-              className="meta-item meta-action"
-              onClick={() => handleDeletePhoto(selectedPhoto)}
+          {activeEventPhotos.length > 1 && (
+            <button
+              className="modal-nav modal-prev"
+              onClick={(e) => {
+                e.stopPropagation();
+                showPreviousPhoto();
+              }}
             >
-              delete
-            </span>
-          </div>
-        </div>
+              {"<"}
+            </button>
+          )}
 
-        {activeEventPhotos.length > 1 && (
-          <button
-            className="modal-nav modal-next"
-            onClick={(e) => {
-              e.stopPropagation();
-              showNextPhoto();
-            }}
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
           >
-            {">"}
-          </button>
-        )}
-      </div>
-    )}
-  </section>
-);
+            <img
+              src={selectedPhoto.mediumUrl}
+              alt={selectedPhoto.fileName}
+              className="modal-image"
+            />
+
+            <div className="modal-meta">
+              <span className="meta-item">
+                {selectedPhoto.fileName}&nbsp;&bull;&nbsp;
+                <a
+                  href={selectedPhoto.originalUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="meta-item meta-link"
+                >
+                  Download original
+                </a>
+              </span>
+
+              {selectedPhoto.takenAt && (
+                <span className="meta-item">
+                  {selectedPhoto.takenAt.toDate
+                    ? selectedPhoto.takenAt.toDate().toLocaleDateString()
+                    : new Date(selectedPhoto.takenAt).toLocaleDateString()}
+                </span>
+              )}
+
+              <span
+                className="meta-item meta-action"
+                onClick={() => handleDeletePhoto(selectedPhoto)}
+              >
+                delete
+              </span>
+            </div>
+          </div>
+
+          {activeEventPhotos.length > 1 && (
+            <button
+              className="modal-nav modal-next"
+              onClick={(e) => {
+                e.stopPropagation();
+                showNextPhoto();
+              }}
+            >
+              {">"}
+            </button>
+          )}
+
+          {isPhonePortrait && activeEventPhotos.length > 1 && (
+            <div className="mobile-modal-nav">
+              <button
+                className="mobile-modal-icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  showPreviousPhoto();
+                }}
+              >
+                {"<"}
+              </button>
+
+              <button
+                className="mobile-modal-icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  showNextPhoto();
+                }}
+              >
+                {">"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
 }
 
 export default AlbumDetails;

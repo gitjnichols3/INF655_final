@@ -25,89 +25,137 @@ function Dashboard() {
   const [description, setDescription] = useState("");
   const [albums, setAlbums] = useState([]);
   const [editingId, setEditingId] = useState(null);
+  const [albumsLoading, setAlbumsLoading] = useState(true);
 
-async function handleToggleShare(album) {
-  const slug = album.shareSlug || crypto.randomUUID();
-
-  await updateDoc(doc(db, "albums", album.id), {
-    isShared: !album.isShared,
-    shareSlug: slug
+  const [dashboardView, setDashboardView] = useState(() => {
+    if (window.innerWidth <= 650) return "mobile";
+    if (window.innerWidth <= 900 || window.innerHeight <= 600) return "tablet";
+    return "desktop";
   });
 
-  loadAlbums();
-}
+  const [showManageAlbums, setShowManageAlbums] = useState(false);
 
-  async function loadAlbums() {
-  const albumsQuery = query(
-    collection(db, "albums"),
-    where("userId", "==", user.uid)
-  );
+  const isMobileDashboard = dashboardView === "mobile";
+  const isTabletDashboard = dashboardView === "tablet";
+  const isDesktopDashboard = dashboardView === "desktop";
 
-  const albumsSnapshot = await getDocs(albumsQuery);
-
-  const albumData = albumsSnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data()
-  }));
-
-  const photosQuery = query(
-    collection(db, "photos"),
-    where("userId", "==", user.uid)
-  );
-
-  const photosSnapshot = await getDocs(photosQuery);
-
-  const photos = photosSnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data()
-  }));
-
-  const albumsWithPhotoData = albumData.map((album) => {
-    const albumPhotos = photos.filter((photo) => photo.albumId === album.id);
-
-    const photoDates = albumPhotos
-      .map((photo) => photo.takenAt || photo.uploadedAt || photo.createdAt)
-      .filter(Boolean)
-      .map((date) => date.toDate ? date.toDate() : new Date(date))
-      .filter((date) => !isNaN(date));
-
-    const earliestDate =
-      photoDates.length > 0
-        ? new Date(Math.min(...photoDates.map((date) => date.getTime())))
-        : null;
-
-const coverPhoto = albumPhotos[0];
-
-return {
-  ...album,
-  photoCount: albumPhotos.length,
-  albumDate: earliestDate,
-  coverImage:
-    coverPhoto?.thumbnailUrl ||
-    coverPhoto?.mediumUrl ||
-    coverPhoto?.originalUrl ||
-    null
-};
-  });
-
-albumsWithPhotoData.sort((a, b) => {
-    // New albums with no photos/date stay at the top
-    if (!a.albumDate && !b.albumDate) {
-      const aCreated = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
-      const bCreated = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
-
-      return bCreated - aCreated;
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth <= 650) {
+        setDashboardView("mobile");
+      } else if (window.innerWidth <= 900 || window.innerHeight <= 600) {
+        setDashboardView("tablet");
+      } else {
+        setDashboardView("desktop");
+      }
     }
 
-    // Albums without photos come before albums with photos
-    if (!a.albumDate) return -1;
-    if (!b.albumDate) return 1;
+    handleResize();
 
-    // Once albums have photos, sort by album/photo date as before
-    return b.albumDate - a.albumDate;
-  });
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("orientationchange", handleResize);
 
-  setAlbums(albumsWithPhotoData);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+    };
+  }, []);
+
+  async function handleToggleShare(album) {
+    const slug = album.shareSlug || crypto.randomUUID();
+
+    await updateDoc(doc(db, "albums", album.id), {
+      isShared: !album.isShared,
+      shareSlug: slug
+    });
+
+    loadAlbums();
+  }
+
+  async function loadAlbums() {
+  if (!user) return;
+
+  setAlbumsLoading(true);
+
+  try {
+    const albumsQuery = query(
+      collection(db, "albums"),
+      where("userId", "==", user.uid)
+    );
+
+    const albumsSnapshot = await getDocs(albumsQuery);
+
+    const albumData = albumsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    const photosQuery = query(
+      collection(db, "photos"),
+      where("userId", "==", user.uid)
+    );
+
+    const photosSnapshot = await getDocs(photosQuery);
+
+    const photos = photosSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    const albumsWithPhotoData = albumData.map((album) => {
+      const albumPhotos = photos.filter((photo) => photo.albumId === album.id);
+
+      const photoDates = albumPhotos
+        .map((photo) => photo.takenAt || photo.uploadedAt || photo.createdAt)
+        .filter(Boolean)
+        .map((date) => (date.toDate ? date.toDate() : new Date(date)))
+        .filter((date) => !isNaN(date));
+
+      const earliestDate =
+        photoDates.length > 0
+          ? new Date(Math.min(...photoDates.map((date) => date.getTime())))
+          : null;
+
+      const coverPhoto = albumPhotos[0];
+
+      return {
+        ...album,
+        photoCount: albumPhotos.length,
+        albumDate: earliestDate,
+        coverImage:
+          coverPhoto?.thumbnailUrl ||
+          coverPhoto?.mediumUrl ||
+          coverPhoto?.originalUrl ||
+          null
+      };
+    });
+
+    albumsWithPhotoData.sort((a, b) => {
+      if (!a.albumDate && !b.albumDate) {
+        const aCreated = a.createdAt?.toDate
+          ? a.createdAt.toDate()
+          : new Date(a.createdAt);
+
+        const bCreated = b.createdAt?.toDate
+          ? b.createdAt.toDate()
+          : new Date(b.createdAt);
+
+        return bCreated - aCreated;
+      }
+
+      if (!a.albumDate) return -1;
+      if (!b.albumDate) return 1;
+
+      return b.albumDate - a.albumDate;
+    });
+
+    setAlbums(albumsWithPhotoData);
+  } catch (err) {
+    console.error(err);
+    alert("Albums failed to load");
+  } finally {
+    setAlbumsLoading(false);
+  }
 }
 
   async function handleSubmit(e) {
@@ -121,18 +169,19 @@ albumsWithPhotoData.sort((a, b) => {
 
       setEditingId(null);
     } else {
-await addDoc(collection(db, "albums"), {
-  title,
-  description,
-  userId: user.uid,
-  isShared: false,
-  shareSlug: crypto.randomUUID(),
-  createdAt: serverTimestamp()
-});
+      await addDoc(collection(db, "albums"), {
+        title,
+        description,
+        userId: user.uid,
+        isShared: false,
+        shareSlug: crypto.randomUUID(),
+        createdAt: serverTimestamp()
+      });
     }
 
     setTitle("");
     setDescription("");
+    setShowManageAlbums(false);
     loadAlbums();
   }
 
@@ -141,14 +190,13 @@ await addDoc(collection(db, "albums"), {
       "Are you sure you want to delete this album and all of its photos?"
     );
 
-    if (!confirmDelete) {
-      return;
-    }
+    if (!confirmDelete) return;
 
     try {
       const photosQuery = query(
         collection(db, "photos"),
-        where("albumId", "==", id)
+        where("albumId", "==", id),
+        where("userId", "==", user.uid)
       );
 
       const photosSnapshot = await getDocs(photosQuery);
@@ -174,7 +222,6 @@ await addDoc(collection(db, "albums"), {
       });
 
       await Promise.all(deletePhotoPromises);
-
       await deleteDoc(doc(db, "albums", id));
 
       loadAlbums();
@@ -188,6 +235,13 @@ await addDoc(collection(db, "albums"), {
     setEditingId(album.id);
     setTitle(album.title);
     setDescription(album.description);
+    setShowManageAlbums(true);
+  }
+
+  function handleCancelEdit() {
+    setEditingId(null);
+    setTitle("");
+    setDescription("");
   }
 
   useEffect(() => {
@@ -197,156 +251,185 @@ await addDoc(collection(db, "albums"), {
   }, [user]);
 
   const formatDate = (d) =>
-  new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(d);
+    new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    }).format(d);
 
- return (
-  <section className="dashboard-page">
-    <h1 className="dashboard-heading">
-      {user?.displayName
-        ? `${user.displayName.split(" ")[0]}'s Dashboard`
-        : "Your Dashboard"}
-    </h1>
+  const albumForm = (
+    <form className="album-form" onSubmit={handleSubmit}>
+      <h2>{editingId ? "Edit Album" : "Create Album"}</h2>
 
-    <div className="dashboard-layout">
-      
-      {/* LEFT: Albums */}
-      <div className="dashboard-main">
-      <h2 className="dashboard-section-title">Your Albums</h2>
+      <input
+        type="text"
+        placeholder="Album title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        required
+      />
 
-        {albums.length === 0 ? (
+      <input
+        type="text"
+        placeholder="Description"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+      />
+
+      <button type="submit" className="primary-button">
+        {editingId ? "Save Changes" : "Create Album"}
+      </button>
+
+      {editingId && (
+        <button type="button" onClick={handleCancelEdit}>
+          Cancel
+        </button>
+      )}
+    </form>
+  );
+
+  return (
+    <section className="dashboard-page">
+      <h1 className="dashboard-heading">
+        {user?.displayName
+          ? `${user.displayName.split(" ")[0]}'s Dashboard`
+          : "Your Dashboard"}
+      </h1>
+
+      <div className="dashboard-layout">
+        <div className="dashboard-main">
+          {isMobileDashboard && (
+            <div className="dashboard-mobile-toggle">
+              <button
+                type="button"
+                className="manage-albums-toggle"
+                onClick={() => setShowManageAlbums(!showManageAlbums)}
+              >
+                {showManageAlbums ? "Hide Album Manager" : "Manage Albums"}
+              </button>
+            </div>
+          )}
+
+          {(isTabletDashboard || (isMobileDashboard && showManageAlbums)) && (
+            <div className="dashboard-mobile-form">{albumForm}</div>
+          )}
+
+          <h2 className="dashboard-section-title">Your Albums</h2>
+
+          {albumsLoading ? (
+              <p>Loading albums...</p>
+            ) : albums.length === 0 ? (
             <div className="empty-state">
-              <p className="empty-state">
+              <p>
                 {user?.displayName
                   ? `${user.displayName.split(" ")[0]}, you don't have any albums yet`
                   : "You don't have any albums yet"}
               </p>
+
               <p>Create your first album to get started.</p>
             </div>
-        ) : (
-          <div className="album-grid">
-            {albums.map((album) => (
-              <article
-                key={album.id}
-                className="album-card"
-                onClick={() => navigate(`/album/${album.id}`)}
-              >
-                <div className="album-card-layout">
-                  <div className="album-card-cover">
-                    {album.coverImage ? (
-                      <img src={album.coverImage} alt={`${album.title} cover`} />
-                    ) : (
-                      <div className="album-card-placeholder">No photos</div>
-                    )}
-                  </div>
-
-                  <div className="album-card-content">
-                    <h3 className="album-title">
-                      {album.title} {album.isShared && <span>🔗</span>}
-                    </h3>
-
-                    <p className="album-description">{album.description}</p>
-
-                    <div className="album-meta">
-                      <span>
-                        📸 {album.photoCount} {album.photoCount === 1 ? "photo" : "photos"}
-                      </span>
-
-                      {album.albumDate && <span>📅 {formatDate(album.albumDate)}</span>}
+          ) : (
+            <div className="album-grid">
+              {albums.map((album) => (
+                <article
+                  key={album.id}
+                  className="album-card"
+                  onClick={() => navigate(`/album/${album.id}`)}
+                >
+                  <div className="album-card-layout">
+                    <div className="album-card-cover">
+                      {album.coverImage ? (
+                        <img
+                          src={album.coverImage}
+                          alt={`${album.title} cover`}
+                        />
+                      ) : (
+                        <div className="album-card-placeholder">No photos</div>
+                      )}
                     </div>
 
-                    <div
-                      className="album-actions"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button onClick={() => handleEdit(album)}>Edit</button>
-                      <button onClick={() => handleDelete(album.id)}>Delete</button>
-                      <button onClick={() => handleToggleShare(album)}>
-                        {album.isShared ? "Disable Sharing" : "Enable Sharing"}
-                      </button>
-                    </div>
+                    <div className="album-card-content">
+                      <h3 className="album-title">
+                        {album.title} {album.isShared && <span>🔗</span>}
+                      </h3>
 
-                    {album.isShared && (
+                      <p className="album-description">{album.description}</p>
+
+                      <div className="album-meta">
+                        <span>
+                          📸 {album.photoCount}{" "}
+                          {album.photoCount === 1 ? "photo" : "photos"}
+                        </span>
+
+                        {album.albumDate && (
+                          <span>📅 {formatDate(album.albumDate)}</span>
+                        )}
+                      </div>
+
                       <div
-                        className="share-box"
+                        className="album-actions"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <a
-                          href={`${window.location.origin}/share/${album.shareSlug}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="album-link"
-                        >
-                          View Shared Album
-                        </a>
+                        <button onClick={() => handleEdit(album)}>Edit</button>
 
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigator.clipboard.writeText(
-                              `${window.location.origin}/share/${album.shareSlug}`
-                            );
-                          }}
-                        >
-                          Copy Link
+                        <button onClick={() => handleDelete(album.id)}>
+                          Delete
+                        </button>
+
+                        <button onClick={() => handleToggleShare(album)}>
+                          {album.isShared
+                            ? "Disable Sharing"
+                            : "Enable Sharing"}
                         </button>
                       </div>
-                    )}
-                  </div>
 
-                  <div className="album-card-view">View Album →</div>
-                </div>
-              </article>
-            ))}
-          </div>
+                      {album.isShared && (
+                        <div
+                          className="share-box"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <a
+                            href={`${window.location.origin}/share/${album.shareSlug}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="album-link"
+                          >
+                            View Shared Album
+                          </a>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+
+                              navigator.clipboard.writeText(
+                                `${window.location.origin}/share/${album.shareSlug}`
+                              );
+                            }}
+                          >
+                            Copy Link
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="album-card-view">
+                      {album.photoCount === 0
+                        ? "View Album to Add Photos →"
+                        : "View Album →"}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {isDesktopDashboard && (
+          <aside className="dashboard-aside">{albumForm}</aside>
         )}
       </div>
-
-      {/* RIGHT: Form */}
-      <aside className="dashboard-aside">
-        <form className="album-form" onSubmit={handleSubmit}>
-          <h2>{editingId ? "Edit Album" : "Create Album"}</h2>
-
-          <input
-            type="text"
-            placeholder="Album title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
-
-          <input
-            type="text"
-            placeholder="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-
-          <button type="submit" className="primary-button">
-            {editingId ? "Save Changes" : "Create Album"}
-          </button>
-
-          {editingId && (
-            <button
-              type="button"
-              onClick={() => {
-                setEditingId(null);
-                setTitle("");
-                setDescription("");
-              }}
-            >
-              Cancel
-            </button>
-          )}
-        </form>
-      </aside>
-
-    </div>
-  </section>
-);
+    </section>
+  );
 }
 
 export default Dashboard;

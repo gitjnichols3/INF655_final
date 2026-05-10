@@ -7,13 +7,13 @@ function Navbar() {
   return (
     <header className="site-header">
       <nav className="navbar">
-        <Link to="/" className="navbar-logo">
+        <Link to={user ? "/dashboard" : "/"} className="navbar-logo">
           <img src="/images/logo-mark.png" alt="Share the Moment logo" />
           <span>Share the Moment</span>
         </Link>
 
         <div className="navbar-links">
-          <Link to="/">Home</Link>
+          {!user && <Link to="/">Home</Link>}
 
           {user ? (
             <>

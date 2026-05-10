@@ -19,8 +19,8 @@
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px,
     rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: system-ui, "Segoe UI", Roboto, sans-serif;
+  --heading: system-ui, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 18px/145% var(--sans);
@@ -82,6 +82,7 @@ body {
   margin: 0 auto;
   padding: 0 2rem;
   width: 100%;
+  box-sizing: border-box;
 }
 
 /* =========================
@@ -223,16 +224,11 @@ p {
   align-items: flex-start;
   justify-content: center;
   gap: 3rem;
-  padding: 4rem 2rem;
+  padding: 5rem 2rem 0.5rem;
   max-width: 1200px;
   margin: 0 auto;
-  min-height: 75vh;
-  padding-top: 5rem;
-}
-
-.home-page .home-hero {
   min-height: 60vh;
-  padding-bottom: .5rem;   /* reduces extra vertical space */
+  box-sizing: border-box;
 }
 
 .home-hero-image {
@@ -247,7 +243,7 @@ p {
 }
 
 .home-hero-content {
-  flex: .9;
+  flex: 0.9;
   max-width: 420px;
 }
 
@@ -309,23 +305,6 @@ p {
   color: var(--link-hover);
 }
 
-@media (max-width: 850px) {
-  .home-hero {
-    flex-direction: column;
-    padding: 2.5rem 1rem;
-    gap: 2rem;
-    text-align: center;
-  }
-
-  .home-hero-content {
-    max-width: 650px;
-  }
-
-  .home-hero-actions {
-    justify-content: center;
-  }
-}
-
 /* =========================
    AUTH
    ========================= */
@@ -347,6 +326,7 @@ p {
   flex-direction: column;
   gap: 1rem;
   background: var(--bg);
+  box-sizing: border-box;
 }
 
 .auth-card input {
@@ -357,10 +337,21 @@ p {
 }
 
 .auth-heading {
-  font-size: 1.8rem;
-  line-height: 1.3;
+  font-size: 2rem;
+  line-height: 1.25;
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  white-space: normal;
+}
+
+.auth-card h1,
+.auth-card h2,
+.auth-page h1,
+.auth-page h2 {
+  line-height: 1.25;
+  height: auto;
+  min-height: 0;
+  white-space: normal;
 }
 
 .form-error {
@@ -393,7 +384,7 @@ p {
 }
 
 .primary-button:hover {
-  background: #fff7ed;          /* very light orange tint */
+  background: #fff7ed;
   border-color: var(--link-hover);
   color: var(--link-hover);
   transform: translateY(-1px);
@@ -402,6 +393,23 @@ p {
 .secondary-button:hover {
   border-color: var(--link-hover);
   color: var(--link-hover);
+}
+
+.manage-albums-toggle {
+  display: none;
+  margin: 1rem 0 0.5rem;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--link-hover);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.manage-albums-toggle:hover {
+  text-decoration: underline;
 }
 
 /* =========================
@@ -425,12 +433,22 @@ p {
 .dashboard-main {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .dashboard-aside {
   position: sticky;
   top: 2rem;
   height: fit-content;
+}
+
+.dashboard-mobile-toggle {
+  display: none;
+}
+
+.dashboard-mobile-form {
+  width: 100%;
+  margin-bottom: 1.25rem;
 }
 
 .album-form {
@@ -443,6 +461,7 @@ p {
   border-radius: 12px;
   padding: 1.25rem;
   padding-bottom: 4rem;
+  box-sizing: border-box;
 }
 
 .album-form input {
@@ -452,36 +471,39 @@ p {
 
 .album-grid {
   display: flex;
-  flex-direction: column;   /* ← stack them */
+  flex-direction: column;
   gap: 1.5rem;
   margin-top: 1rem;
-  margin-left: 1.5rem;
+  margin-left: 0;
 }
 
 .album-card {
   width: 100%;
   max-width: 720px;
-  border: 1px solid var(--border);
+  border: 1px solid #c9b9a3;
   border-radius: 12px;
   padding: 0.75rem;
-  background: #fff;
+  background: #fffdf8;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+  box-sizing: border-box;
 }
 
 .album-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
 }
 
 .album-card-layout {
   display: flex;
   gap: 1rem;
-  align-items: stretch;   /* ← keeps everything aligned nicely */
-  padding: 0.5rem;  
+  align-items: flex-start;
+  padding: 0.5rem;
+  background: #fffdf9;
+  border-radius: 10px;
 }
 
-/* LEFT image */
 .album-card-cover {
   width: 150px;
   flex-shrink: 0;
@@ -490,6 +512,7 @@ p {
   background: #f3f4f6;
   border: 1px solid #e5e7eb;
   display: flex;
+  align-self: flex-start;
 }
 
 .album-card-cover img {
@@ -498,7 +521,6 @@ p {
   object-fit: cover;
 }
 
-/* Placeholder */
 .album-card-placeholder {
   width: 100%;
   min-height: 120px;
@@ -509,16 +531,15 @@ p {
   font-size: 0.8rem;
 }
 
-/* RIGHT content */
 .album-card-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 0.25rem;
+  min-width: 0;
 }
 
-/* Title */
 .album-title {
   margin: 0;
   font-size: 1.6rem;
@@ -532,8 +553,8 @@ p {
   opacity: 0.75;
 }
 
-/* Link */
-.album-link, .album-link:visited {
+.album-link,
+.album-link:visited {
   display: inline-block;
   margin-top: 0.5rem;
   font-weight: 600;
@@ -552,10 +573,9 @@ p {
 }
 
 .album-actions {
-  margin-top: 0.75rem;
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
-  flex-wrap: wrap;
 }
 
 .album-meta {
@@ -587,6 +607,7 @@ p {
   opacity: 1;
   transform: translateX(3px);
 }
+
 /* =========================
    ALBUM DETAILS LAYOUT
    ========================= */
@@ -596,13 +617,14 @@ p {
   max-width: 1320px;
   margin: 0 auto;
   padding-top: 1rem;
+  box-sizing: border-box;
 }
 
 .back-link {
   display: inline-block;
-  margin-bottom: 0.5rem;     /* tighter */
-  margin-top: 0;             /* remove extra spacing */
-  font-size: 0.85rem;        /* smaller */
+  margin-bottom: 0.5rem;
+  margin-top: 0;
+  font-size: 0.85rem;
   opacity: 0.7;
   text-decoration: none;
 }
@@ -615,10 +637,6 @@ p {
 
 .album-header {
   margin-bottom: 2rem;
-}
-
-.album-header {
-  margin-bottom: 2rem;
   text-align: center;
   max-width: 700px;
   margin-left: auto;
@@ -626,16 +644,16 @@ p {
 }
 
 .album-header h1 {
-  font-size: 64px;        /* was 56px → slightly larger */
+  font-size: 64px;
   margin-top: 0;
-  margin-bottom: 0.75rem; /* more space before description */
-  line-height: 1.1;       /* tighter, looks cleaner at larger size */
+  margin-bottom: 0.75rem;
+  line-height: 1.1;
 }
 
 .album-header p {
-  margin-top: 0.5rem;     /* adds separation from title */
+  margin-top: 0.5rem;
   opacity: 0.85;
-  font-size: 1.05rem;     /* optional: slight bump for readability */
+  font-size: 1.05rem;
 }
 
 .album-content-layout {
@@ -646,7 +664,15 @@ p {
 }
 
 .album-main-area {
+  grid-column: 1;
   min-width: 0;
+}
+
+.album-manage-area {
+  grid-column: 2;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 1rem;
 }
 
 .album-controls {
@@ -657,17 +683,34 @@ p {
   top: 1rem;
 }
 
+.album-control-section {
+  margin-bottom: 1.25rem;
+}
+
 .album-controls h2 {
   font-size: 1.1rem;
   margin-bottom: 0.5rem;
   padding-bottom: 0.25rem;
 }
 
+.share-help-text,
+.upload-help-text,
+.event-help-text {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #666;
+  margin: 0 0 0.75rem;
+}
+
+.album-control-section .share-box {
+  margin-top: 0.75rem;
+}
+
 .share-box {
   margin-top: 0.75rem;
   display: flex;
   align-items: center;
-  gap: 0.75rem;   /* ← this fixes spacing */
+  gap: 0.75rem;
   flex-wrap: wrap;
 }
 
@@ -692,13 +735,10 @@ p {
   padding: 1rem;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: var(--social-bg);
+  background: #fafafa;
   box-shadow: var(--shadow);
-
-    background: #fafafa;
-  padding: 1rem;
-  border-radius: 12px;
   margin-bottom: 1rem;
+  box-sizing: border-box;
 }
 
 .upload-section,
@@ -728,13 +768,22 @@ p {
   z-index: 2000;
 }
 
+.upload-floating-status {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 1000;
+  max-width: 340px;
+}
+
 .upload-status-card {
-  background: white;
-  padding: 2rem;
-  border-radius: 16px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 1rem;
   width: min(420px, 90%);
   text-align: center;
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .upload-status-card h2 {
@@ -761,6 +810,17 @@ p {
   margin-bottom: 0;
 }
 
+.upload-batch-text {
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.upload-background-note {
+  font-size: 0.9rem;
+  opacity: 0.75;
+  margin-top: 0.5rem;
+}
+
 .album-content-with-timeline {
   display: grid;
   grid-template-columns: minmax(220px, 32%) minmax(0, 1fr);
@@ -774,6 +834,7 @@ p {
   position: sticky;
   top: 1rem;
   padding-right: 0.75rem;
+  min-width: 0;
 }
 
 .gallery-column {
@@ -854,14 +915,7 @@ p {
   gap: 0.5rem;
 }
 
-.timeline-edit {
-  background: none;
-  border: none;
-  color: #888;
-  cursor: pointer;
-  font-size: 0.8rem;
-}
-
+.timeline-edit,
 .timeline-delete {
   background: none;
   border: none;
@@ -870,7 +924,8 @@ p {
   font-size: 0.8rem;
 }
 
-.timeline-delete:hover, .timeline-edit:hover {
+.timeline-delete:hover,
+.timeline-edit:hover {
   opacity: 1;
   color: var(--danger);
   text-decoration: underline;
@@ -895,7 +950,7 @@ p {
 }
 
 .timeline-item:hover {
-  background: rgba(0,0,0,0.05);
+  background: rgba(0, 0, 0, 0.05);
   border-color: var(--link-hover);
   color: var(--link-hover);
 }
@@ -905,8 +960,8 @@ p {
   box-shadow: inset 4px 0 0 var(--accent);
   font-weight: 700;
   transform: scale(1.03);
-    border-left: 4px solid #d46a1f;
-  background: rgba(212,106,31,0.08);
+  border-left: 4px solid #d46a1f;
+  background: rgba(212, 106, 31, 0.08);
 }
 
 .timeline-title {
@@ -956,7 +1011,6 @@ p {
   display: block;
   border-radius: 10px;
   transition: transform 0.22s ease, opacity 0.22s ease, box-shadow 0.22s ease;
-
 }
 
 .photo-thumb-button:hover .photo-thumb {
@@ -1134,9 +1188,11 @@ p {
 .meta-link:hover {
   color: #d46a1f;
 }
+
 /* =========================
    SHARED ALBUM
    ========================= */
+
 .shared-album-page {
   max-width: 1320px;
   width: 100%;
@@ -1174,52 +1230,296 @@ p {
   opacity: 0.8;
 }
 
+.gallery-empty-message {
+  margin-top: 2rem;
+  padding: 2rem;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  text-align: center;
+  background: rgba(244, 243, 236, 0.45);
+}
+
+.gallery-empty-message h2 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.gallery-empty-message p {
+  opacity: 0.75;
+}
+
 /* =========================
-   RESPONSIVE
+   TABLET
    ========================= */
 
-@media (max-width: 900px) {
+@media (min-width: 651px) and (max-width: 900px) {
+  .app-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .dashboard-page {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    box-sizing: border-box;
+  }
+
+  .dashboard-heading {
+    font-size: 2rem;
+    line-height: 1.2;
+    text-align: center;
+  }
+
   .dashboard-layout {
+    display: grid;
     grid-template-columns: 1fr;
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 100%;
+    margin-top: 1rem;
+  }
+
+  .dashboard-main {
+    width: 100%;
+    max-width: 100%;
+    order: initial;
   }
 
   .dashboard-aside {
-    position: static;
+    display: none;
+  }
+
+  .dashboard-mobile-toggle {
+    display: none;
+  }
+
+  .dashboard-mobile-form {
+    display: block;
+    width: 100%;
+    margin-bottom: 1.25rem;
+  }
+
+  .album-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    width: 100%;
+    margin: 0;
   }
 
   .album-card {
     width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .album-card-layout {
+    display: grid;
+    grid-template-columns: 160px minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .album-card-cover {
+    width: 160px;
+    max-width: 160px;
+  }
+
+  .album-card-cover img,
+  .album-card-placeholder {
+    width: 160px;
+    height: 130px;
+    object-fit: cover;
+  }
+
+  .album-card-content {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .album-card-view {
+    width: auto;
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  .album-page {
+    width: 100%;
+    max-width: 100%;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
     box-sizing: border-box;
   }
 
+  .album-header {
+    margin-bottom: 1.25rem;
+  }
 
-.album-controls {
-  width: 100%;
-  grid-template-columns: 1fr;
-}
+  .album-header h1 {
+    font-size: 2.4rem;
+  }
+
+  .album-content-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 230px;
+    gap: 0.75rem;
+    align-items: start;
+    width: 100%;
+  }
+
+  .album-main-area {
+    grid-column: 1;
+    width: 100%;
+    min-width: 0;
+    order: initial;
+  }
+
+  .album-manage-area {
+    grid-column: 2;
+    width: 230px;
+    min-width: 0;
+    order: initial;
+    margin-bottom: 0;
+  }
+
+  .album-controls {
+    position: sticky;
+    top: 1rem;
+    width: 100%;
+    gap: 0.5rem;
+  }
 
   .album-content-with-timeline {
-    grid-template-columns: 1fr;
+    display: grid;
+    grid-template-columns: 145px minmax(0, 1fr);
+    gap: 0.6rem;
+    align-items: start;
+    width: 100%;
   }
 
   .timeline-column {
-    position: static;
-    max-height: none;
+    position: sticky;
+    top: 1rem;
+    max-height: 75vh;
+    overflow-y: auto;
     padding-right: 0;
+    min-width: 0;
   }
 
-  .timeline-column::after {
-  content: "";
-  position: sticky;
-  bottom: 0;
-  display: block;
-  height: 30px;
-  background: linear-gradient(to bottom, transparent, var(--bg));
-  pointer-events: none;
-}
+  .timeline-intro {
+    margin-bottom: 0.6rem;
+  }
+
+  .timeline-intro h2 {
+    font-size: 0.95rem;
+  }
+
+  .timeline-intro p {
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+
+  .timeline-list {
+    padding-left: 0.85rem;
+    gap: 1rem;
+  }
+
+  .timeline-date {
+    font-size: 0.78rem;
+  }
+
+  .timeline-events,
+  .timeline-extra-links {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+
+  .timeline-event-row {
+    width: 100%;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .timeline-actions {
+    gap: 0.3rem;
+    margin-left: 0.15rem;
+  }
+
+  .timeline-item {
+    width: auto;
+    max-width: 100%;
+    white-space: normal;
+    text-align: left;
+    font-size: 0.72rem;
+    padding: 0.28rem 0.55rem;
+  }
+
+  .gallery-column {
+    min-width: 0;
+  }
+
+  .photo-section-header {
+    margin-bottom: 0.6rem;
+  }
+
+  .photo-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .album-control-section,
+  .share-box,
+  .upload-section,
+  .event-section {
+    padding: 0.6rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .album-controls h2 {
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .share-help-text,
+  .upload-help-text,
+  .event-help-text {
+    font-size: 0.72rem;
+    line-height: 1.25;
+    margin-bottom: 0.5rem;
+  }
+
+  .upload-section,
+  .event-form {
+    gap: 0.45rem;
+  }
+
+  .upload-section select,
+  .upload-section input,
+  .event-form input {
+    padding: 0.4rem;
+    font-size: 0.8rem;
+  }
+
+  .mobile-album-links {
+    display: none;
+  }
+
+    .photo-delete-link,
+  .photo-event-select {
+    opacity: 1;
+  }
 }
 
+/* =========================
+   MOBILE
+   ========================= */
+
 @media (max-width: 650px) {
+  .app-container,
+  .page-container {
+    padding: 0 1rem;
+  }
 
   .auth-page h1,
   .auth-page h2,
@@ -1236,19 +1536,10 @@ p {
     text-align: center;
   }
 
-
-    .auth-heading {
+  .auth-heading {
     font-size: 1.4rem;
     line-height: 1.3;
     padding: 0 0.5rem;
-  }
-
-  .app-container {
-    padding: 0 1rem;
-  }
-
-  .page-container {
-    padding: 0 1rem;
   }
 
   .navbar {
@@ -1262,49 +1553,50 @@ p {
     max-width: 110px;
   }
 
-  .hero-actions,
-  .album-actions {
+  .home-hero {
     flex-direction: column;
-    align-items: stretch;
+    padding: 2.5rem 1rem;
+    gap: 2rem;
+    text-align: center;
   }
 
-  .primary-button,
-  .secondary-button,
-  .nav-button {
-    text-align: center;
+  .home-hero-content {
+    max-width: 650px;
+  }
+
+  .home-hero-actions {
+    justify-content: center;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   h1 {
     font-size: 40px;
   }
 
-  .modal-overlay {
-    padding: 2rem 3rem;
-  }
-
-  .modal-nav {
-    font-size: 2rem;
-  }
-
-  .modal-prev {
-    left: 0.75rem;
-  }
-
-  .modal-next {
-    right: 0.75rem;
-  }
-
   .dashboard-page {
     width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding-left: 0;
+    padding-right: 0;
+    box-sizing: border-box;
   }
 
   .dashboard-heading {
-    width: 100%;
-    font-size: 1.8rem;
-    line-height: 1.25;
+    display: none;
+  }
+
+  .dashboard-mobile-toggle {
+    display: block;
+  }
+
+  .dashboard-section-title {
+    margin-top: 1rem;
     text-align: center;
-    margin: 1.5rem 0 1rem;
-    word-break: break-word;
   }
 
   .dashboard-layout {
@@ -1325,25 +1617,50 @@ p {
     position: static;
   }
 
-  .album-grid {
-    margin-left: 0;
+  .dashboard-mobile-form {
     width: 100%;
+    margin-bottom: 1.25rem;
+  }
+
+  .album-grid {
+    width: 100%;
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
   }
 
   .album-card {
     width: 100%;
     max-width: 100%;
-    box-sizing: border-box;
+    margin: 0;
+    background: #fffaf3;
+    border: 1px solid #c3ad91;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+  }
+
+  .album-card:hover {
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
   }
 
   .album-card-layout {
+    display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    align-items: stretch;
   }
 
   .album-card-cover {
     width: 100%;
+    max-width: 100%;
     height: 180px;
+  }
+
+  .album-card-cover img,
+  .album-card-placeholder {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
   }
 
   .album-card-content {
@@ -1357,15 +1674,34 @@ p {
     word-break: break-word;
   }
 
+  .album-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .album-actions button,
+  .album-actions a,
+  .album-actions .primary-button,
+  .album-actions .secondary-button {
+    min-height: 46px;
+    padding: 0.75rem 0.5rem;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
   .album-card-view {
+    width: 100%;
     margin-left: 0;
     align-self: flex-start;
+    text-align: left;
+    white-space: normal;
   }
 
   .album-form {
     width: 100%;
     max-width: 100%;
-    box-sizing: border-box;
     margin: 0;
     padding: 1rem;
   }
@@ -1376,9 +1712,17 @@ p {
     box-sizing: border-box;
   }
 
-   .album-page {
+  .primary-button,
+  .secondary-button,
+  .nav-button {
+    text-align: center;
+  }
+
+  .album-page {
     width: 100%;
-    padding-top: 0.5rem;
+    max-width: 100%;
+    padding: 0.5rem 0 0;
+    box-sizing: border-box;
   }
 
   .back-link {
@@ -1413,12 +1757,20 @@ p {
   }
 
   .album-main-area,
+  .album-manage-area,
   .gallery-column,
   .timeline-column {
     width: 100%;
     min-width: 0;
+    grid-column: 1;
   }
 
+  .album-manage-area {
+    order: -1;
+    margin-bottom: 0.5rem;
+  }
+
+  .album-manage-area .album-controls,
   .album-controls {
     position: static;
     width: 100%;
@@ -1433,6 +1785,45 @@ p {
     padding: 1rem;
   }
 
+  .manage-albums-toggle {
+    display: inline-block;
+    margin: 1rem 0 0.5rem;
+    background: none;
+    border: none;
+    color: var(--link-hover);
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .album-manage-area .manage-albums-toggle {
+    margin-bottom: 1rem;
+  }
+
+  .mobile-album-links {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0.25rem 0 0.5rem;
+    line-height: 1.2;
+  }
+
+  .mobile-album-links .manage-albums-toggle {
+    margin: 0;
+    font-size: 0.85rem;
+  }
+
+  .mobile-link-divider {
+    color: var(--text);
+    opacity: 0.45;
+    font-size: 0.85rem;
+  }
+
+  .timeline-toggle {
+    margin: 0;
+  }
+
   .album-content-with-timeline {
     display: grid;
     grid-template-columns: 1fr;
@@ -1443,10 +1834,13 @@ p {
     position: static;
     max-height: none;
     overflow: visible;
+    padding-right: 0;
   }
 
   .timeline-list {
-    padding-left: 1.25rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    box-sizing: border-box;
     gap: 1.25rem;
   }
 
@@ -1467,9 +1861,24 @@ p {
     text-align: left;
   }
 
+  .photo-section-header {
+    margin-bottom: 0.5rem;
+  }
+
+  .event-title {
+    margin-top: 0;
+    margin-bottom: 0.25rem;
+  }
+
+  .event-meta-line,
+  .event-description {
+    font-size: 0.85rem;
+    line-height: 1.3;
+  }
+
   .photo-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
 
   .photo-delete-link,
@@ -1477,13 +1886,25 @@ p {
     opacity: 1;
   }
 
+  .upload-floating-status {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    max-width: none;
+  }
+
   .modal-overlay {
     padding: 1rem;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
   }
 
   .modal-content {
-    max-width: 100%;
+    width: 100%;
+    max-width: 95vw;
     max-height: 85vh;
+    padding-bottom: 6rem;
   }
 
   .modal-image {
@@ -1499,4 +1920,286 @@ p {
     top: 0.75rem;
     right: 1rem;
   }
+
+  .modal-nav {
+    font-size: 2rem;
+  }
+
+  .modal-prev {
+    left: 0.75rem;
+  }
+
+  .modal-next {
+    right: 0.75rem;
+  }
+
+  .mobile-modal-nav {
+    position: fixed;
+    bottom: 1.25rem;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    z-index: 1200;
+    pointer-events: none;
+  }
+
+  .mobile-modal-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.14);
+    color: white;
+    font-size: 2rem;
+    font-weight: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
+  .mobile-modal-icon:active {
+    transform: scale(0.96);
+  }
+
+  .shared-album-page {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 1rem;
+  }
+
+  .shared-album-page .album-content-layout,
+  .shared-album-page .shared-layout,
+  .shared-album-page .album-main-area,
+  .shared-album-page .album-content-with-timeline,
+  .shared-album-page .timeline-column,
+  .shared-album-page .gallery-column {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+  }
+
+  .shared-album-page .album-content-with-timeline {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .shared-album-page .timeline-column {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .shared-album-page .timeline-list {
+    padding-left: 1.25rem;
+    gap: 1.25rem;
+  }
+
+  .shared-album-page .timeline-events,
+  .shared-album-page .timeline-extra-links {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .shared-album-page .timeline-event-row {
+    width: auto;
+  }
+
+  .shared-album-page .timeline-item {
+    width: auto;
+    max-width: calc(100vw - 4rem);
+    display: inline-flex;
+    white-space: normal;
+    text-align: left;
+  }
+
+  .shared-album-page .timeline-title {
+    display: inline;
+  }
+
+  .shared-album-page .photo-section-header {
+    margin-bottom: 0.5rem;
+  }
+
+  .shared-album-page .event-title {
+    margin-top: 0;
+    margin-bottom: 0.25rem;
+  }
+
+  .shared-album-page .event-meta-line,
+  .shared-album-page .event-description {
+    font-size: 0.85rem;
+    line-height: 1.3;
+  }
+
+  .shared-album-page .photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .shared-album-date {
+    margin: 0.35rem 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-h);
+    opacity: 0.8;
+  }
 }
+
+/* =========================
+   SHORT LANDSCAPE / COMPACT HEIGHT
+   ========================= */
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .dashboard-mobile-toggle {
+    display: block;
+  }
+
+  .dashboard-aside {
+    display: none;
+  }
+
+  .dashboard-mobile-form {
+    width: 100%;
+    margin-bottom: 1.25rem;
+  }
+}
+
+@media (max-width: 950px) and (max-height: 600px) {
+  .dashboard-mobile-toggle {
+    display: block;
+  }
+
+  .dashboard-aside {
+    display: none;
+  }
+
+  .dashboard-mobile-form {
+    display: block;
+    width: 100%;
+    margin-bottom: 1.25rem;
+  }
+}
+  @media (max-width: 650px) {
+  .album-manage-area,
+  .album-controls,
+  .album-manage-area .album-controls {
+    position: static;
+    top: auto;
+  }
+}
+@media (max-width: 900px) and (orientation: landscape) {
+  .mobile-modal-nav {
+    display: none !important;
+  }
+
+  .modal-nav {
+    display: block !important;
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1200;
+  }
+
+  .modal-prev {
+    left: 0.75rem;
+    right: auto;
+  }
+
+  .modal-next {
+    right: 0.75rem;
+    left: auto;
+  }
+
+  .modal-content {
+    max-width: 85vw;
+    padding-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .modal-image {
+    max-height: 85vh;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+/* =========================================
+   MODAL NAVIGATION - FINAL MOBILE FIX
+   ========================================= */
+
+/* Portrait phones = bottom controls */
+@media (max-width: 650px) and (orientation: portrait) {
+
+  .modal-nav {
+    display: none !important;
+  }
+
+  .mobile-modal-nav {
+    display: flex !important;
+  }
+}
+
+/* Landscape phones/tablets = side arrows */
+@media (orientation: landscape) {
+
+  .mobile-modal-nav {
+    display: none !important;
+  }
+
+  .modal-nav {
+    display: block !important;
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1200;
+  }
+
+  .modal-prev {
+    left: 0.75rem;
+    right: auto;
+  }
+
+  .modal-next {
+    right: 0.75rem;
+    left: auto;
+  }
+
+  .modal-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 85vw;
+    padding-bottom: 0;
+  }
+
+  .modal-image {
+    margin-left: auto;
+    margin-right: auto;
+    max-height: 82vh;
+  }
+}
+
+/* Desktop/tablet */
+@media (min-width: 651px) {
+
+  .mobile-modal-nav {
+    display: none !important;
+  }
+
+  .modal-nav {
+    display: block !important;
+  }
+}
+

@@ -20,6 +20,9 @@ function SharedAlbum() {
   const [activeEventId, setActiveEventId] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const isMobile = window.innerWidth <= 650;
+  const [showTimeline, setShowTimeline] = useState(true);
+
   useEffect(() => {
     async function loadSharedAlbum() {
       try {
@@ -100,31 +103,58 @@ function SharedAlbum() {
   const uncategorizedPhotos = photos.filter((photo) => !photo.eventId);
   const activeEvent = events.find((event) => event.id === activeEventId);
 
-const activeEventPhotos =
-  !hasTimeline
-    ? photos
-    : activeEventId === null
-      ? []
-      : activeEventId === "all"
-        ? photos
-        : activeEventId === "uncategorized"
-          ? uncategorizedPhotos
-          : photos.filter((photo) => photo.eventId === activeEventId);
+  const activeEventPhotos =
+    !hasTimeline
+      ? photos
+      : activeEventId === null
+        ? []
+        : activeEventId === "all"
+          ? photos
+          : activeEventId === "uncategorized"
+            ? uncategorizedPhotos
+            : photos.filter((photo) => photo.eventId === activeEventId);
 
   const activeEventPhotoCount = activeEventPhotos.length;
 
+  const albumPhotoDates = photos
+    .map((photo) => photo.takenAt || photo.uploadedAt || photo.createdAt)
+    .filter(Boolean)
+    .map((date) => (date.toDate ? date.toDate() : new Date(date)))
+    .filter((date) => !isNaN(date));
+
+  const albumDate =
+    albumPhotoDates.length > 0
+      ? new Date(
+          Math.min(...albumPhotoDates.map((date) => date.getTime()))
+        )
+      : null;
+
   function getEventDate(eventId) {
-    const eventPhotos = photos.filter((photo) => photo.eventId === eventId);
+    const eventPhotos = photos.filter(
+      (photo) => photo.eventId === eventId
+    );
 
     const dates = eventPhotos
       .map((photo) => photo.takenAt)
       .filter(Boolean)
-      .map((date) => (date.toDate ? date.toDate() : new Date(date)))
+      .map((date) =>
+        date.toDate ? date.toDate() : new Date(date)
+      )
       .filter((date) => !isNaN(date));
 
     if (dates.length === 0) return null;
 
-    return new Date(Math.min(...dates.map((date) => date.getTime())));
+    return new Date(
+      Math.min(...dates.map((date) => date.getTime()))
+    );
+  }
+
+  function handleTimelineSelection(value) {
+    setActiveEventId(value);
+
+    if (isMobile) {
+      setShowTimeline(false);
+    }
   }
 
   function formatDate(date) {
@@ -159,19 +189,23 @@ const activeEventPhotos =
     return groups;
   }, {});
 
-  const groupedEventList = Object.values(groupedEvents).sort((a, b) => {
-    if (!a.date && !b.date) return 0;
-    if (!a.date) return 1;
-    if (!b.date) return -1;
-    return a.date - b.date;
-  });
+  const groupedEventList = Object.values(groupedEvents).sort(
+    (a, b) => {
+      if (!a.date && !b.date) return 0;
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return a.date - b.date;
+    }
+  );
 
   function showNextPhoto() {
     const currentIndex = activeEventPhotos.findIndex(
       (photo) => photo.id === selectedPhoto.id
     );
 
-    const nextIndex = (currentIndex + 1) % activeEventPhotos.length;
+    const nextIndex =
+      (currentIndex + 1) % activeEventPhotos.length;
+
     setSelectedPhoto(activeEventPhotos[nextIndex]);
   }
 
@@ -195,129 +229,240 @@ const activeEventPhotos =
     return (
       <section>
         <h1>Shared album not found</h1>
-        <p>This album may not exist or sharing may have been disabled.</p>
+        <p>
+          This album may not exist or sharing may have been
+          disabled.
+        </p>
       </section>
     );
   }
 
   return (
-  <section className="album-page shared-album-page">
+    <section className="album-page shared-album-page">
+      <div className="album-header">
+        <h1>{album.title}</h1>
 
-<div className="album-header">
-  <h1>{album.title}</h1>
-  <span className="shared-badge">Shared Album</span>
-  <p>{album.description}</p>
-</div>
+        <span className="shared-badge">
+          Shared Album
+        </span>
 
-    <div className="album-content-layout shared-layout">
-      <main className="album-main-area">
+        {albumDate && (
+          <p className="shared-album-date">
+            {formatDate(albumDate)}
+          </p>
+        )}
 
-        {hasTimeline ? (
-          <div className="album-content-with-timeline">
+        <p>{album.description}</p>
+      </div>
 
-            {/* TIMELINE */}
-            <div className="timeline-column">
-              <h2>Timeline</h2>
+      <div className="album-content-layout shared-layout">
+        <main className="album-main-area">
+          {hasTimeline ? (
+            <div className="album-content-with-timeline">
+              {showTimeline ? (
+                <div className="timeline-column">
+                  <div className="timeline-intro">
+                    <h2>Select an Event</h2>
 
-              <div className="timeline-list">
-                {groupedEventList.map((group) => (
-                  <div
-                    key={group.date ? group.date.toISOString() : "no-date"}
-                    className="timeline-date-group"
-                  >
-                    <h3 className="timeline-date">{formatDate(group.date)}</h3>
+                    <p>
+                      Select an event from the timeline to
+                      view photos.
+                    </p>
+                  </div>
 
-                    <div className="timeline-events">
-                      {group.events.map((event) => (
+                  <div className="timeline-list">
+                    {groupedEventList.map((group) => (
+                      <div
+                        key={
+                          group.date
+                            ? group.date.toISOString()
+                            : "no-date"
+                        }
+                        className="timeline-date-group"
+                      >
+                        <h3 className="timeline-date">
+                          {formatDate(group.date)}
+                        </h3>
+
+                        <div className="timeline-events">
+                          {group.events.map((event) => (
+                            <button
+                              key={event.id}
+                              type="button"
+                              className={`timeline-item ${
+                                activeEventId === event.id
+                                  ? "active"
+                                  : ""
+                              }`}
+                              onClick={() =>
+                                handleTimelineSelection(
+                                  event.id
+                                )
+                              }
+                            >
+                              <span className="timeline-title">
+                                {event.name}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="timeline-extra-links">
+                      <button
+                        type="button"
+                        className={`timeline-item ${
+                          activeEventId === "all"
+                            ? "active"
+                            : ""
+                        }`}
+                        onClick={() =>
+                          handleTimelineSelection("all")
+                        }
+                      >
+                        <span className="timeline-title">
+                          All Photos
+                        </span>
+                      </button>
+
+                      {uncategorizedPhotos.length > 0 && (
                         <button
-                          key={event.id}
                           type="button"
                           className={`timeline-item ${
-                            activeEventId === event.id ? "active" : ""
+                            activeEventId ===
+                            "uncategorized"
+                              ? "active"
+                              : ""
                           }`}
-                          onClick={() => setActiveEventId(event.id)}
+                          onClick={() =>
+                            handleTimelineSelection(
+                              "uncategorized"
+                            )
+                          }
                         >
-                          <span className="timeline-title">{event.name}</span>
+                          <span className="timeline-title">
+                            Uncategorized
+                          </span>
                         </button>
-                      ))}
+                      )}
                     </div>
                   </div>
-                ))}
-
-                <div className="timeline-extra-links">
-                  <button
-                    type="button"
-                    className={`timeline-item ${
-                      activeEventId === "all" ? "active" : ""
-                    }`}
-                    onClick={() => setActiveEventId("all")}
-                  >
-                    <span className="timeline-title">All Photos</span>
-                  </button>
-
-                  {uncategorizedPhotos.length > 0 && (
+                </div>
+              ) : (
+                isMobile && (
+                  <div className="mobile-shared-album-links">
                     <button
                       type="button"
-                      className={`timeline-item ${
-                        activeEventId === "uncategorized" ? "active" : ""
-                      }`}
-                      onClick={() => setActiveEventId("uncategorized")}
+                      className="manage-albums-toggle timeline-toggle"
+                      onClick={() => setShowTimeline(true)}
                     >
-                      <span className="timeline-title">Uncategorized</span>
+                      Timeline
                     </button>
-                  )}
-                </div>
-              </div>
-            </div>
+                  </div>
+                )
+              )}
 
-            {/* GALLERY */}
-            <div className="gallery-column">
-              <div className="photo-section-header">
-                {activeEventId === null ? (
-                  <h2>Select an event</h2>
-                ) : activeEventId === "all" ? (
-                  <h2>All Photos</h2>
-                ) : activeEventId === "uncategorized" ? (
-                  <h2>Uncategorized Photos</h2>
-                ) : activeEvent ? (
-                  <>
-                    <h2 className="event-title">{activeEvent.name}</h2>
+              <div className="gallery-column">
+                <div className="photo-section-header">
+                  {activeEventId === "all" ? (
+                    <h2>All Photos</h2>
+                  ) : activeEventId ===
+                    "uncategorized" ? (
+                    <h2>Uncategorized Photos</h2>
+                  ) : activeEvent ? (
+                    <>
+                      <h2 className="event-title">
+                        {activeEvent.name}
+                      </h2>
 
-                    <p className="event-meta-line">
-                      {getEventDate(activeEvent.id) &&
-                        formatDate(getEventDate(activeEvent.id))}
+                      <p className="event-meta-line">
+                        {getEventDate(activeEvent.id) &&
+                          formatDate(
+                            getEventDate(activeEvent.id)
+                          )}
 
-                      {activeEvent.location && `, ${activeEvent.location}`}
+                        {activeEvent.location &&
+                          `, ${activeEvent.location}`}
 
-                      {`, ${activeEventPhotoCount} ${
-                        activeEventPhotoCount === 1 ? "photo" : "photos"
-                      }`}
-                    </p>
-
-                    {activeEvent.description && (
-                      <p className="event-description">
-                        {activeEvent.description}
+                        {`, ${activeEventPhotoCount} ${
+                          activeEventPhotoCount === 1
+                            ? "photo"
+                            : "photos"
+                        }`}
                       </p>
-                    )}
-                  </>
+
+                      {activeEvent.description && (
+                        <p className="event-description">
+                          {activeEvent.description}
+                        </p>
+                      )}
+                    </>
+                  ) : null}
+                </div>
+
+                {activeEventId === null && (
+                  <div className="gallery-empty-message">
+                    <h2>No event selected</h2>
+
+                    <p>
+                      Click an event in the timeline to
+                      view images.
+                    </p>
+                  </div>
+                )}
+
+                {activeEventId !== null &&
+                activeEventPhotos.length === 0 ? (
+                  <p>No photos to show.</p>
                 ) : (
-                  <h2>Photos</h2>
+                  activeEventId !== null && (
+                    <div
+                      className="photo-grid photo-grid-fade"
+                      key={activeEventId}
+                    >
+                      {activeEventPhotos.map((photo) => (
+                        <div
+                          key={photo.id}
+                          className="photo-card"
+                        >
+                          <button
+                            className="photo-thumb-button"
+                            onClick={() =>
+                              setSelectedPhoto(photo)
+                            }
+                          >
+                            <img
+                              src={photo.thumbnailUrl}
+                              alt={photo.fileName}
+                              className="photo-thumb"
+                            />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )
                 )}
               </div>
+            </div>
+          ) : (
+            <div className="album-no-timeline">
+              <h2>Photos</h2>
 
-              {activeEventPhotos.length === 0 ? (
-                activeEventId === null ? (
-                  <p>Select an event from the timeline to view photos.</p>
-                ) : (
-                  <p>No photos to show.</p>
-                )
+              {photos.length === 0 ? (
+                <p>No photos to show.</p>
               ) : (
-                <div className="photo-grid photo-grid-fade" key={activeEventId}>
-                  {activeEventPhotos.map((photo) => (
-                    <div key={photo.id} className="photo-card">
+                <div className="photo-grid">
+                  {photos.map((photo) => (
+                    <div
+                      key={photo.id}
+                      className="photo-card"
+                    >
                       <button
                         className="photo-thumb-button"
-                        onClick={() => setSelectedPhoto(photo)}
+                        onClick={() =>
+                          setSelectedPhoto(photo)
+                        }
                       >
                         <img
                           src={photo.thumbnailUrl}
@@ -330,101 +475,113 @@ const activeEventPhotos =
                 </div>
               )}
             </div>
+          )}
+        </main>
+      </div>
 
-          </div>
-        ) : (
-          <div className="album-no-timeline">
-            <h2>Photos</h2>
-
-            {photos.length === 0 ? (
-              <p>No photos to show.</p>
-            ) : (
-              <div className="photo-grid">
-                {photos.map((photo) => (
-                  <div key={photo.id} className="photo-card">
-                    <button
-                      className="photo-thumb-button"
-                      onClick={() => setSelectedPhoto(photo)}
-                    >
-                      <img
-                        src={photo.thumbnailUrl}
-                        alt={photo.fileName}
-                        className="photo-thumb"
-                      />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-      </main>
-    </div>
-
-    {/* MODAL unchanged */}
-    {selectedPhoto && (
-      <div
-        className="modal-overlay"
-        onClick={() => setSelectedPhoto(null)}
-      >
-        <button
-          className="modal-close"
+      {selectedPhoto && (
+        <div
+          className="modal-overlay"
           onClick={() => setSelectedPhoto(null)}
         >
-          X
-        </button>
-
-        {activeEventPhotos.length > 1 && (
           <button
-            className="modal-nav modal-prev"
-            onClick={(e) => {
-              e.stopPropagation();
-              showPreviousPhoto();
-            }}
+            className="modal-close"
+            onClick={() => setSelectedPhoto(null)}
           >
-            {"<"}
+            X
           </button>
-        )}
 
-        <div
-          className="modal-content"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <img
-            src={selectedPhoto.mediumUrl}
-            alt={selectedPhoto.fileName}
-            className="modal-image"
-          />
+          {activeEventPhotos.length > 1 && (
+            <button
+              className="modal-nav modal-prev"
+              onClick={(e) => {
+                e.stopPropagation();
+                showPreviousPhoto();
+              }}
+            >
+              {"<"}
+            </button>
+          )}
 
-          <div className="modal-meta">
-            <span className="meta-item">{selectedPhoto.fileName}</span>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={selectedPhoto.mediumUrl}
+              alt={selectedPhoto.fileName}
+              className="modal-image"
+            />
 
-            {selectedPhoto.takenAt && (
+            <div className="modal-meta">
               <span className="meta-item">
-                {selectedPhoto.takenAt.toDate
-                  ? selectedPhoto.takenAt.toDate().toLocaleDateString()
-                  : new Date(selectedPhoto.takenAt).toLocaleDateString()}
+                {selectedPhoto.fileName}
               </span>
-            )}
-          </div>
-        </div>
 
-        {activeEventPhotos.length > 1 && (
-          <button
-            className="modal-nav modal-next"
-            onClick={(e) => {
-              e.stopPropagation();
-              showNextPhoto();
-            }}
-          >
-            {">"}
-          </button>
-        )}
-      </div>
-    )}
-  </section>
-);
+              {selectedPhoto.takenAt && (
+                <span className="meta-item">
+                  {selectedPhoto.takenAt.toDate
+                    ? selectedPhoto.takenAt
+                        .toDate()
+                        .toLocaleDateString()
+                    : new Date(
+                        selectedPhoto.takenAt
+                      ).toLocaleDateString()}
+                </span>
+              )}
+
+              {selectedPhoto.originalUrl && (
+                <a
+                  href={selectedPhoto.originalUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="meta-item meta-link"
+                >
+                  Download original
+                </a>
+              )}
+            </div>
+          </div>
+
+          {activeEventPhotos.length > 1 && (
+            <button
+              className="modal-nav modal-next"
+              onClick={(e) => {
+                e.stopPropagation();
+                showNextPhoto();
+              }}
+            >
+              {">"}
+            </button>
+          )}
+
+          {isMobile && activeEventPhotos.length > 1 && (
+            <div className="mobile-modal-nav">
+              <button
+                className="mobile-modal-icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  showPreviousPhoto();
+                }}
+              >
+                {"<"}
+              </button>
+
+              <button
+                className="mobile-modal-icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  showNextPhoto();
+                }}
+              >
+                {">"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
 }
 
 export default SharedAlbum;
