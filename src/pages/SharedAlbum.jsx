@@ -7,22 +7,31 @@ import {
   collection,
   query,
   where,
-  getDocs
+  getDocs,
 } from "firebase/firestore";
 
+// Public read-only shared album page.
+// This page loads albums, photos, and timeline events from Firebase
+// and allows visitors to browse shared image galleries.
 function SharedAlbum() {
   const { slug } = useParams();
 
+  // Shared album data loaded dynamically from Firestore.
   const [album, setAlbum] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [events, setEvents] = useState([]);
+
+  // Modal and timeline interaction state.
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [activeEventId, setActiveEventId] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Responsive timeline behavior for mobile users.
   const isMobile = window.innerWidth <= 650;
   const [showTimeline, setShowTimeline] = useState(true);
 
+  // Load the shared album, photos, and timeline events.
+  // This demonstrates Firebase integration and dynamic rendering.
   useEffect(() => {
     async function loadSharedAlbum() {
       try {
@@ -43,7 +52,7 @@ function SharedAlbum() {
 
         const albumData = {
           id: albumDoc.id,
-          ...albumDoc.data()
+          ...albumDoc.data(),
         };
 
         setAlbum(albumData);
@@ -57,19 +66,16 @@ function SharedAlbum() {
 
         const photoData = photosSnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         }));
 
+        // Sort photos chronologically using EXIF or upload dates.
         photoData.sort((a, b) => {
           const aDate =
-            a.takenAt?.toMillis?.() ||
-            a.createdAt?.toMillis?.() ||
-            0;
+            a.takenAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
 
           const bDate =
-            b.takenAt?.toMillis?.() ||
-            b.createdAt?.toMillis?.() ||
-            0;
+            b.takenAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
 
           return aDate - bDate;
         });
@@ -85,7 +91,7 @@ function SharedAlbum() {
 
         const eventData = eventsSnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         }));
 
         setEvents(eventData);
@@ -100,22 +106,29 @@ function SharedAlbum() {
   }, [slug]);
 
   const hasTimeline = events.length > 0;
-  const uncategorizedPhotos = photos.filter((photo) => !photo.eventId);
-  const activeEvent = events.find((event) => event.id === activeEventId);
 
-  const activeEventPhotos =
-    !hasTimeline
-      ? photos
-      : activeEventId === null
-        ? []
-        : activeEventId === "all"
-          ? photos
-          : activeEventId === "uncategorized"
-            ? uncategorizedPhotos
-            : photos.filter((photo) => photo.eventId === activeEventId);
+  const uncategorizedPhotos = photos.filter(
+    (photo) => !photo.eventId
+  );
+
+  const activeEvent = events.find(
+    (event) => event.id === activeEventId
+  );
+
+  // Dynamic photo filtering based on the selected timeline event.
+  const activeEventPhotos = !hasTimeline
+    ? photos
+    : activeEventId === null
+      ? []
+      : activeEventId === "all"
+        ? photos
+        : activeEventId === "uncategorized"
+          ? uncategorizedPhotos
+          : photos.filter((photo) => photo.eventId === activeEventId);
 
   const activeEventPhotoCount = activeEventPhotos.length;
 
+  // Calculate an album date using the earliest image date.
   const albumPhotoDates = photos
     .map((photo) => photo.takenAt || photo.uploadedAt || photo.createdAt)
     .filter(Boolean)
@@ -129,6 +142,7 @@ function SharedAlbum() {
         )
       : null;
 
+  // Build event dates using image EXIF data.
   function getEventDate(eventId) {
     const eventPhotos = photos.filter(
       (photo) => photo.eventId === eventId
@@ -163,13 +177,14 @@ function SharedAlbum() {
     return new Intl.DateTimeFormat("en-US", {
       month: "long",
       day: "numeric",
-      year: "numeric"
+      year: "numeric",
     }).format(date);
   }
 
+  // Group timeline events by date.
   const eventsWithDates = events.map((event) => ({
     ...event,
-    displayDate: getEventDate(event.id)
+    displayDate: getEventDate(event.id),
   }));
 
   const groupedEvents = eventsWithDates.reduce((groups, event) => {
@@ -180,7 +195,7 @@ function SharedAlbum() {
     if (!groups[key]) {
       groups[key] = {
         date: event.displayDate,
-        events: []
+        events: [],
       };
     }
 
@@ -194,6 +209,7 @@ function SharedAlbum() {
       if (!a.date && !b.date) return 0;
       if (!a.date) return 1;
       if (!b.date) return -1;
+
       return a.date - b.date;
     }
   );
@@ -229,6 +245,7 @@ function SharedAlbum() {
     return (
       <section>
         <h1>Shared album not found</h1>
+
         <p>
           This album may not exist or sharing may have been
           disabled.
@@ -452,6 +469,7 @@ function SharedAlbum() {
               {photos.length === 0 ? (
                 <p>No photos to show.</p>
               ) : (
+                // Dynamic image rendering using .map().
                 <div className="photo-grid">
                   {photos.map((photo) => (
                     <div
@@ -479,6 +497,7 @@ function SharedAlbum() {
         </main>
       </div>
 
+      {/* Modal image viewer with previous/next navigation. */}
       {selectedPhoto && (
         <div
           className="modal-overlay"

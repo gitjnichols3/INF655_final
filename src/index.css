@@ -1,6 +1,4 @@
-/* =========================
-   ROOT / VARIABLES
-   ========================= */
+/* ROOT / VARIABLES */
 
 :root {
   --text: #6b6375;
@@ -51,9 +49,7 @@
   }
 }
 
-/* =========================
-   GLOBAL LAYOUT
-   ========================= */
+/* GLOBAL LAYOUT */
 
 body {
   margin: 0;
@@ -85,9 +81,7 @@ body {
   box-sizing: border-box;
 }
 
-/* =========================
-   TYPOGRAPHY
-   ========================= */
+/* TYPOGRAPHY */
 
 h1,
 h2 {
@@ -110,9 +104,7 @@ p {
   margin: 0;
 }
 
-/* =========================
-   NAVBAR / HEADER
-   ========================= */
+/* NAVBAR / HEADER */
 
 .site-header {
   background: #f4f7fb;
@@ -184,9 +176,7 @@ p {
   white-space: nowrap;
 }
 
-/* =========================
-   FOOTER
-   ========================= */
+/* FOOTER */
 
 .site-footer {
   margin-top: 5rem;
@@ -211,9 +201,7 @@ p {
   line-height: 1.4;
 }
 
-/* =========================
-   HOME
-   ========================= */
+/* HOME */
 
 .home-page {
   width: 100%;
@@ -305,9 +293,7 @@ p {
   color: var(--link-hover);
 }
 
-/* =========================
-   AUTH
-   ========================= */
+/* AUTH */
 
 .auth-page {
   display: flex;
@@ -359,9 +345,7 @@ p {
   font-size: 0.9rem;
 }
 
-/* =========================
-   BUTTONS
-   ========================= */
+/* BUTTONS */
 
 .primary-button {
   background: #f3f4f6;
@@ -412,9 +396,7 @@ p {
   text-decoration: underline;
 }
 
-/* =========================
-   DASHBOARD / ALBUM CARDS
-   ========================= */
+/* DASHBOARD / ALBUM CARDS */
 
 .dashboard-layout {
   display: grid;
@@ -608,9 +590,7 @@ p {
   transform: translateX(3px);
 }
 
-/* =========================
-   ALBUM DETAILS LAYOUT
-   ========================= */
+/* ALBUM DETAILS LAYOUT */
 
 .album-page {
   width: 100%;
@@ -849,9 +829,7 @@ p {
   margin-bottom: 1rem;
 }
 
-/* =========================
-   TIMELINE
-   ========================= */
+/* TIMELINE */
 
 .timeline-list {
   position: relative;
@@ -970,9 +948,7 @@ p {
   color: var(--text-h);
 }
 
-/* =========================
-   PHOTO GRID
-   ========================= */
+/* PHOTO GRID */
 
 .photo-grid {
   width: 100%;
@@ -1078,9 +1054,7 @@ p {
   color: var(--text);
 }
 
-/* =========================
-   MODAL
-   ========================= */
+/* MODAL */
 
 .modal-overlay {
   position: fixed;
@@ -1189,9 +1163,7 @@ p {
   color: #d46a1f;
 }
 
-/* =========================
-   SHARED ALBUM
-   ========================= */
+/* SHARED ALBUM */
 
 .shared-album-page {
   max-width: 1320px;
@@ -1248,9 +1220,7 @@ p {
   opacity: 0.75;
 }
 
-/* =========================
-   TABLET
-   ========================= */
+/* TABLET */
 
 @media (min-width: 651px) and (max-width: 900px) {
   .app-container {
@@ -1505,15 +1475,13 @@ p {
     display: none;
   }
 
-    .photo-delete-link,
+  .photo-delete-link,
   .photo-event-select {
     opacity: 1;
   }
 }
 
-/* =========================
-   MOBILE
-   ========================= */
+/* MOBILE */
 
 @media (max-width: 650px) {
   .app-container,
@@ -2056,9 +2024,7 @@ p {
   }
 }
 
-/* =========================
-   SHORT LANDSCAPE / COMPACT HEIGHT
-   ========================= */
+/* SHORT LANDSCAPE / COMPACT HEIGHT */
 
 @media (max-height: 500px) and (orientation: landscape) {
   .dashboard-mobile-toggle {
@@ -2090,7 +2056,8 @@ p {
     margin-bottom: 1.25rem;
   }
 }
-  @media (max-width: 650px) {
+
+@media (max-width: 650px) {
   .album-manage-area,
   .album-controls,
   .album-manage-area .album-controls {
@@ -2098,6 +2065,7 @@ p {
     top: auto;
   }
 }
+
 @media (max-width: 900px) and (orientation: landscape) {
   .mobile-modal-nav {
     display: none !important;
@@ -2135,13 +2103,11 @@ p {
     margin-right: auto;
   }
 }
-/* =========================================
-   MODAL NAVIGATION - FINAL MOBILE FIX
-   ========================================= */
+
+/* MODAL NAVIGATION - FINAL MOBILE FIX */
 
 /* Portrait phones = bottom controls */
 @media (max-width: 650px) and (orientation: portrait) {
-
   .modal-nav {
     display: none !important;
   }
@@ -2153,7 +2119,6 @@ p {
 
 /* Landscape phones/tablets = side arrows */
 @media (orientation: landscape) {
-
   .mobile-modal-nav {
     display: none !important;
   }
@@ -2193,7 +2158,6 @@ p {
 
 /* Desktop/tablet */
 @media (min-width: 651px) {
-
   .mobile-modal-nav {
     display: none !important;
   }
@@ -2202,4 +2166,3 @@ p {
     display: block !important;
   }
 }
-

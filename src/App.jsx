@@ -1,3 +1,9 @@
+// Main application routing file.
+// React Router is used to connect the different pages of the app,
+// including protected routes that require users to be logged in.
+
+// Protected routes require Firebase authentication.
+
 import { Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";

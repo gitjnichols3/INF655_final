@@ -1,3 +1,6 @@
+// Public landing page for the app. This page introduces the project
+// and directs users to register or log in.
+
 import { Link } from "react-router-dom";
 
 function Home() {

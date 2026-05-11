@@ -1,3 +1,7 @@
+// This helper resizes uploaded images in the browser before saving them.
+// It lets the app store smaller thumbnail and medium-size versions of each photo,
+// which makes the gallery load faster and avoids using full-size images everywhere.
+
 export function resizeImage(file, maxWidth, quality = 0.8) {
   return new Promise((resolve, reject) => {
     const img = new Image();

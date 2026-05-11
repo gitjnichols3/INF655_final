@@ -1,3 +1,6 @@
+// Registration form using Firebase Authentication and React state.
+// New users can optionally add a display name for personalization.
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";

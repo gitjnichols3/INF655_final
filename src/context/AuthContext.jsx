@@ -1,3 +1,7 @@
+// Creates and manages the authentication context for the app.
+// It handles registering users, logging in/out, and tracking authentication state
+// so user information can be shared throughout the application.
+
 import { createContext, useContext, useEffect, useState } from "react";
 import {
   createUserWithEmailAndPassword,
